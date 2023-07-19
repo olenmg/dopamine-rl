@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import gymnasium as gym
 
-from algorithms import DQN, C51
+from rl_algo import DQN, C51
 from utils.config import TrainConfig, DQNConfig, C51Config
 from utils.policy_networks import MLPNet, ConvNet
 from utils.plot import plot_train_result

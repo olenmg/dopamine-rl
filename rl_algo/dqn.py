@@ -3,10 +3,9 @@ from collections import deque
 from typing import Union, List
 
 import numpy as np
-import gymnasium as gym
 import torch
 
-from utils.config import TrainConfig, DQNConfig, C51Config
+from utils.config import TrainConfig, DQNConfig
 from utils.replay_buffer import ReplayBuffer
 from utils.wrappers import get_env
 
@@ -188,12 +187,3 @@ class DQN(object):
             self.eps * self.eps_decay,
             self.eps_end
         )
-
-
-class C51(object):
-    def __init__(
-        self,
-        train_config,
-        algo_config
-    ):
-        pass
