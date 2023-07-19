@@ -1,2 +1,2 @@
 # dopamine-rl
-Reinforcement Learning Algorithms to Simulate Dopamine Responses
+Reinforcement learning algorithms for simulating dopamine responses
