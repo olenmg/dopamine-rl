@@ -25,6 +25,8 @@ class DQN(object):
 
         self.gamma = algo_config.discount_rate
 
+        self.tau = algo_config.soft_update_rate
+
         self.learning_starts = algo_config.learning_starts
         self.train_freq = algo_config.train_freq
         self.target_update_freq = algo_config.target_update_freq
@@ -96,13 +98,6 @@ class DQN(object):
                 status_string = f"{self.run_name:10} | STEP: {step} | REWARD: {np.mean(episode_deque):.2f} | Epsilon: {self.eps:.3f}"
                 print(status_string + "\r", end="", flush=True)
 
-            # Update the total episode reward & Check if the episode has been done
-            # episode_reward += reward
-            # if done:
-            #     obs, _ = self.env.reset()
-            #     episode_rewards.append(episode_reward)
-            #     episode_reward = 0
-            # else:
             obs = next_obs
 
             # Update the epsilon value
@@ -148,7 +143,11 @@ class DQN(object):
 
     # Update the target network's weights with the online network's one. 
     def update_target(self) -> None:
-        self.target_net.load_state_dict(self.pred_net.state_dict())
+        for pred_param, target_param in \
+                zip(self.pred_net.parameters(), self.target_net.parameters()):
+            target_param.data.copy_(
+                self.tau * pred_param.data + (1.0 - self.tau) * target_param
+            )
     
     # Return desired action(s) that maximizes the Q-value for given observation(s) by the online network.
     def predict(

@@ -18,18 +18,25 @@ class C51(object):
     ):
         assert isinstance(algo_config, C51Config), "Given config instance should be a C51Config class."
 
-        # DQN configurations
+        # C51 configurations
         self.eps = algo_config.eps_start
         self.eps_decay = algo_config.eps_decay
         self.eps_end = algo_config.eps_end
 
         self.gamma = algo_config.discount_rate
 
+        self.tau = algo_config.soft_update_rate # Soft target update
+
         self.learning_starts = algo_config.learning_starts
         self.train_freq = algo_config.train_freq
         self.target_update_freq = algo_config.target_update_freq
 
         self.memory = ReplayBuffer(size=algo_config.buffer_size)
+        self.value_range = np.linspace(
+            train_config.v_min,
+            train_config.v_max,
+            train_config.n_atom
+        )
 
         # Train configurations
         self.run_name = train_config.run_name
@@ -96,13 +103,6 @@ class C51(object):
                 status_string = f"{self.run_name:10} | STEP: {step} | REWARD: {np.mean(episode_deque):.2f} | Epsilon: {self.eps:.3f}"
                 print(status_string + "\r", end="", flush=True)
 
-            # Update the total episode reward & Check if the episode has been done
-            # episode_reward += reward
-            # if done:
-            #     obs, _ = self.env.reset()
-            #     episode_rewards.append(episode_reward)
-            #     episode_reward = 0
-            # else:
             obs = next_obs
 
             # Update the epsilon value
@@ -148,7 +148,11 @@ class C51(object):
 
     # Update the target network's weights with the online network's one. 
     def update_target(self) -> None:
-        self.target_net.load_state_dict(self.pred_net.state_dict())
+        for pred_param, target_param in \
+                zip(self.pred_net.parameters(), self.target_net.parameters()):
+            target_param.data.copy_(
+                self.tau * pred_param.data + (1.0 - self.tau) * target_param
+            )
     
     # Return desired action(s) that maximizes the Q-value for given observation(s) by the online network.
     def predict(
@@ -173,9 +177,9 @@ class C51(object):
         if self.rng.random() >= eps:
             self.pred_net.eval()
             with torch.no_grad():
-                action = torch.argmax(
-                    self.pred_net(obses.to(self.device)), dim=-1
-                ).cpu().numpy()
+                action_dist = self.pred_net(obses.to(self.device)) # (n_envs, n_actions, n_atom)
+                action_value = torch.sum(action_dist * self.value_range.view(1, 1, -1), dim=-1) # (n_envs, n_actions)
+                action = torch.argmax(action_value, dim=-1).cpu().numpy() # (n_envs, )
         else:
             action = self.rng.choice(self.act_n, size=(self.n_envs, ))
 
