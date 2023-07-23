@@ -236,11 +236,12 @@ def get_env(
     **kwargs
 ):
     def wrap_():
-        env = gym.make(env_id, **kwargs)
+        env = gym.make(env_id, frameskip=kwargs["frameskip"])
         env = Monitor(env, './')
         if "ALE" in env_id:
             env = AtariPreprocessing(env)
-            env = FrameStack(env, num_stack=4)
+        if kwargs["state_len"] > 1:
+            env = FrameStack(env, num_stack=kwargs["state_len"])
         return env
     env = gym.vector.AsyncVectorEnv([wrap_ for _ in range(n_envs)])
     return env

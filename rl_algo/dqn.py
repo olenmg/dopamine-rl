@@ -37,9 +37,11 @@ class DQN(object):
         self.run_name = train_config.run_name
         self.env = get_env(
             env_id=train_config.env_id,
-            n_envs=train_config.n_envs
-        ) #TODO: state_len
-        self.act_n = self.env.unwrapped.action_space[0].n
+            n_envs=train_config.n_envs,
+            frameskip=train_config.frame_skip,
+            state_len=train_config.state_len
+        )
+        self.n_act = self.env.unwrapped.action_space[0].n
 
         self.n_envs = train_config.n_envs
         self.state_len = train_config.state_len
@@ -176,7 +178,7 @@ class DQN(object):
                     self.pred_net(obses.to(self.device)), dim=-1
                 ).cpu().numpy()
         else:
-            action = self.rng.choice(self.act_n, size=(self.n_envs, ))
+            action = self.rng.choice(self.n_act, size=(self.n_envs, ))
 
         return action
     

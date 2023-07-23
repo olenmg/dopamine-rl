@@ -32,19 +32,25 @@ class C51(object):
         self.target_update_freq = algo_config.target_update_freq
 
         self.memory = ReplayBuffer(size=algo_config.buffer_size)
-        self.value_range = np.linspace(
-            train_config.v_min,
-            train_config.v_max,
-            train_config.n_atom
+        self.value_range = torch.linspace(
+            algo_config.v_min,
+            algo_config.v_max,
+            algo_config.n_atom
         )
+        self.v_min = algo_config.v_min
+        self.v_max = algo_config.v_max
+        self.n_atom = algo_config.n_atom
+        self.v_step = (self.v_max - self.v_min) / (self.n_atom - 1)
 
         # Train configurations
         self.run_name = train_config.run_name
         self.env = get_env(
             env_id=train_config.env_id,
-            n_envs=train_config.n_envs
-        ) #TODO: state_len
-        self.act_n = self.env.unwrapped.action_space[0].n
+            n_envs=train_config.n_envs,
+            frameskip=train_config.frame_skip,
+            state_len=train_config.state_len
+        )
+        self.n_act = self.env.unwrapped.action_space[0].n
 
         self.n_envs = train_config.n_envs
         self.state_len = train_config.state_len
@@ -70,6 +76,7 @@ class C51(object):
         # Others
         self.rng = np.random.default_rng(train_config.random_seed)
         self.buffer_cnt = 0
+        self.value_range = self.value_range.to(self.device)
 
     def train(self) -> List[int]:
         episode_deque = deque(maxlen=100)
@@ -131,18 +138,44 @@ class C51(object):
         obses, actions, rewards, next_obses, dones = tuple(map(
             lambda x: torch.from_numpy(x).to(self.device),
             self.memory.sample(self.batch_size)
-        ))
+        )) 
+        # obses, next_obses         : (B, state_len, 84, 84)
+        # actions, rewards, dones   : (B, )
 
         # Get q-value from the target network
         with torch.no_grad():
-            q_val = torch.max(self.target_net(next_obses), dim=-1).values
-        y = rewards + self.gamma * ~dones * q_val # ~dones == (1 - dones)
+            # Calculate the estimated value distribution with target networks
+            next_q_dist = self.target_net(next_obses) # (B, n_act, n_atom)
+            opt_acts = torch.sum(
+                next_q_dist * self.value_range.view(1, 1, -1), dim=-1
+            ).argmax(dim=-1).view(-1, 1, 1) # (B, 1, 1)
+
+            est_q_dist = rewards.view(-1, 1) + self.gamma * self.target_net(
+                next_obses
+            ).gather(1, opt_acts.expand(-1, 1, self.n_atom)).squeeze() # (B, n_atom)
+
+            # Calculate the y-distribution with estimated value distribution
+            next_v_range = rewards.view(-1, 1) + \
+                self.gamma * self.value_range.view(1, -1) * (~dones).view(-1, 1)
+            next_v_range = torch.clamp(next_v_range, self.v_min, self.v_max) # (B, n_atom)
+            next_v_pos = (next_v_range - self.v_min) / self.v_step # (B, n_atom)
+
+            lb = torch.floor(next_v_pos).long() # (B, n_atom)
+            ub = torch.ceil(next_v_pos).long() # (B, n_atom)
+            
+            y_dist = torch.zeros_like(est_q_dist) # (B, n_atom)
+            y_dist.scatter_add_(1, lb, est_q_dist * (ub - next_v_pos)) # (B, n_atom)
+            y_dist.scatter_add_(1, ub, est_q_dist * (next_v_pos - lb)) # (B, n_atom)
+            
+        # Calculate the predicted value distribution with pred. networks
+        pred_dist = self.pred_net(obses).gather(
+            1, actions.view(-1, 1, 1).expand(-1, 1, self.n_atom)
+        ).squeeze() # (B, n_atom)
 
         # Forward pass & Backward pass
         self.pred_net.train()
         self.optimizer.zero_grad()
-        pred = self.pred_net(obses).gather(1, actions.unsqueeze(1)).squeeze(-1)
-        loss = self.criterion(pred, y)
+        loss = self.criterion(pred_dist, y_dist)
         loss.backward()
         self.optimizer.step()
 
@@ -181,7 +214,7 @@ class C51(object):
                 action_value = torch.sum(action_dist * self.value_range.view(1, 1, -1), dim=-1) # (n_envs, n_actions)
                 action = torch.argmax(action_value, dim=-1).cpu().numpy() # (n_envs, )
         else:
-            action = self.rng.choice(self.act_n, size=(self.n_envs, ))
+            action = self.rng.choice(self.n_act, size=(self.n_envs, ))
 
         return action
     

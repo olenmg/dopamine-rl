@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -19,31 +21,58 @@ class PolicyNetwork(nn.Module):
 
 
 class MLPNet(PolicyNetwork):
-    def __init__(self, input_size, output_size, hidden_sizes=[64,]):
+    def __init__(
+        self,
+        n_actions: int,
+        input_size: int,
+        hidden_sizes: List[int] = [64, ],
+        state_len: int = 1,
+        n_atom: int = -1
+    ):
+        """
+            n_atom: If given, network will be built for C51 algorithm
+        """
+
         super().__init__()        
-        self.in_layer = nn.Linear(input_size, hidden_sizes[0])
+        self.in_layer = nn.Linear(input_size * state_len, hidden_sizes[0])
         self.linears = nn.ModuleList(
             [
                 nn.Linear(in_shape, out_shape) for in_shape, out_shape in zip(hidden_sizes[:-1], hidden_sizes[1:])
             ]
         )
-        self.out_layer = nn.Linear(hidden_sizes[-1], output_size)
+        if n_atom == -1:
+            self.fc_q = nn.Linear(hidden_sizes[-1], n_actions)
+        else:
+            self.fc_q = nn.Linear(hidden_sizes[-1], n_actions * n_atom)
+
+        self.n_actions = n_actions
+        self.n_atom = n_atom
+
         self._init_weight()
     
     def forward(self, x):
         x = F.relu(self.in_layer(x))
         for layer in self.linears:
             x = F.relu(layer(x))
-        return self.out_layer(x)
+
+        if self.n_atom == -1:
+            action_value = self.fc_q(x)
+        else:
+            action_value = F.softmax(self.fc_q(x).view(-1, self.n_actions, self.n_atom), dim=-1)
+        return action_value
 
 
 class ConvNet(PolicyNetwork):
     def __init__(
         self,
         n_actions: int,
-        n_atom: int,
-        state_len: int = 1
+        state_len: int = 1,
+        n_atom: int = -1
     ):
+        """
+            n_atom: If given, network will be built for C51 algorithm
+        """
+
         super().__init__()
         # Expected input tensor shape: (B, 84, 84, state_len)
         # Input (B, 210, 160, 3) will be processed by `ProcessFrame84` wrapper -> (B, 84, 84, state_len)
@@ -57,23 +86,28 @@ class ConvNet(PolicyNetwork):
             nn.ReLU(),
         )
         self.fc = nn.Linear(7 * 7 * 16 * state_len, 512)
-        
-        # action value distribution
-        self.fc_q = nn.Linear(512, n_actions * n_atom)
 
+        if n_atom == -1:
+            self.fc_q = nn.Linear(512, n_actions)
+        else:
+            self.fc_q = nn.Linear(512, n_actions * n_atom)
+
+        # action value distribution
         self.n_actions = n_actions
         self.n_atom = n_atom
 
         self._init_weight()
 
     def forward(self, x):
-        batch_size = x.size(0)
         x = self.conv(x / 255.0) #TODO: Check
-        x = x.view(batch_size, -1)
+        x = x.flatten(start_dim=1)
         x = F.relu(self.fc(x))
         
         # Output of C51 is PMFs of action value distribution
-        action_value = F.softmax(self.fc_q(x).view(batch_size, self.n_actions, self.n_atom), dim=2)
+        if self.n_atom == -1:
+            action_value = self.fc_q(x)
+        else:
+            action_value = F.softmax(self.fc_q(x).view(-1, self.n_actions, self.n_atom), dim=-1)
 
         return action_value
 
