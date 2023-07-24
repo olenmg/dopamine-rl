@@ -96,9 +96,8 @@ class DQN(object):
                 self.update_target()
 
             # Verbose (stdout logging)
-            if self.verbose: # Logging only representative env info. (1st env.)
-                status_string = f"{self.run_name:10} | STEP: {step} | REWARD: {np.mean(episode_deque):.2f} | Epsilon: {self.eps:.3f}"
-                print(status_string + "\r", end="", flush=True)
+            if self.verbose and episode_deque and (step % 10000 == 0): # Logging only representative env info. (1st env.)
+                print(f"STEP: {step} | REWARD: {np.mean(episode_deque):.2f} | RECENT REWARD: {episode_deque[-1]:.2f} | EPSILON: {self.eps:.3f}")
 
             obs = next_obs
 
