@@ -35,12 +35,7 @@ class DQN(object):
 
         # Train configurations
         self.run_name = train_config.run_name
-        self.env = get_env(
-            env_id=train_config.env_id,
-            n_envs=train_config.n_envs,
-            frameskip=train_config.frame_skip,
-            state_len=train_config.state_len
-        )
+        self.env = get_env(train_config)
         self.n_act = self.env.unwrapped.action_space[0].n
 
         self.n_envs = train_config.n_envs

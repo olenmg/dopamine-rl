@@ -8,14 +8,15 @@ from rl_algo import DQN, C51
 from utils.config import TrainConfig, DQNConfig, C51Config
 from utils.policy_networks import MLPNet, ConvNet
 from utils.plot import plot_train_result
+from utils.wrappers import get_env
 
 
 def train_dqn(
     train_config: TrainConfig
 ) -> List[int]:
-    sample_env = gym.make(train_config.env_id)
+    sample_env = get_env(train_config)
     policy_network = ConvNet(
-        n_actions=sample_env.action_space.n,
+        n_actions=sample_env.unwrapped.action_space[0].n,
         state_len=train_config.state_len
     )
     sample_env.close()

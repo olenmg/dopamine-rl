@@ -167,7 +167,7 @@ class OpenLoop1DTrack(gym.Env):
 
     @staticmethod
     def _load_mice_image():
-        mice_pic = cv2.imread("../assets/mice.png", cv2.IMREAD_UNCHANGED)
+        mice_pic = cv2.imread("assets/mice.png", cv2.IMREAD_UNCHANGED)
         mice_pic = cv2.resize(mice_pic, (40, 40))
         mice_pic = np.repeat((mice_pic[:, :, 3] < 50).reshape(40, 40, 1), repeats=3, axis=2) * 255
         return mice_pic
@@ -185,13 +185,13 @@ class OpenLoopStandard1DTrack(OpenLoop1DTrack):
     def __init__(self, visual_noise=False):
         super().__init__(
             water_spout=335,
-            video_path="custom_envs/track/VR_standard.mp4",
+            video_path="rl_env/track/VR_standard.mp4",
             visual_noise=visual_noise,
         )
 
     @staticmethod
     def _load_data():
-        with open(f"custom_envs/track/oloop_standard_1d.pkl", "rb") as f:
+        with open(f"rl_env/track/oloop_standard_1d.pkl", "rb") as f:
             data = pickle.load(f)
         return data
 
@@ -204,12 +204,12 @@ class OpenLoopTeleportLong1DTrack(OpenLoop1DTrack):
     def __init__(self, visual_noise=False):
         super().__init__(
             water_spout=227,
-            video_path="custom_envs/track/VR_tele_1dest_long.mp4",
+            video_path="rl_env/track/VR_tele_1dest_long.mp4",
             visual_noise=visual_noise,
         )
 
     @staticmethod
     def _load_data():
-        with open("custom_envs/track/oloop_teleport_long_1d.pkl", "rb") as f:
+        with open("rl_env/track/oloop_teleport_long_1d.pkl", "rb") as f:
             data = pickle.load(f)
         return data

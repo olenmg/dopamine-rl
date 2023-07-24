@@ -29,8 +29,11 @@ import time
 from typing import Any, Dict, List, Optional, SupportsFloat, Tuple, Union
 
 import gymnasium as gym
+from gymnasium import spec
 from gymnasium.core import ActType, ObsType
 from gymnasium.wrappers import AtariPreprocessing, FrameStack
+
+from rl_env import CUSTOM_ENVS
 
 
 class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
@@ -230,29 +233,48 @@ class ResultsWriter:
         self.file_handler.close()
 
 
-def get_env(
-    env_id: str,
-    n_envs: int = 1,
-    **kwargs
-):
+def get_env(train_config, **kwargs) -> gym.Env:
+    # Wrapping
     def wrap_():
-        env = gym.make(env_id, frameskip=kwargs["frameskip"])
+        try:
+            if train_config.frame_skip == 1 and ("ALE" not in train_config.env_id):
+                env = gym.make(train_config.env_id, **kwargs)
+            else:
+                env = gym.make(train_config.env_id, **kwargs, frameskip=train_config.frame_skip)
+        except:
+            env = CUSTOM_ENVS[train_config.env_id](**kwargs)
+
         env = Monitor(env, './')
-        if "ALE" in env_id:
+        if "ALE" in train_config.env_id:
             env = AtariPreprocessing(env)
-        if kwargs["state_len"] > 1:
-            env = FrameStack(env, num_stack=kwargs["state_len"])
+        if train_config.state_len > 1:
+            env = FrameStack(env, num_stack=train_config.state_len)
         return env
-    env = gym.vector.AsyncVectorEnv([wrap_ for _ in range(n_envs)])
-    return env
+    env = gym.vector.AsyncVectorEnv([wrap_ for _ in range(train_config.n_envs)])
+    return env 
 
 
 if __name__ == "__main__":
-    env = get_env(
-        env_id="ALE/Breakout-v5",
+    import torch
+    import torch.nn as nn
+
+    from utils.config import TrainConfig
+
+    train_config = TrainConfig(
+        run_name="test",
+        env_id="CartPole-v1",
         n_envs=4,
-        frameskip=1
+        state_len=1, 
+        frame_skip=1,
+        random_seed=42,
+        optim_cls=torch.optim.Adam,
+        optim_kwargs={'lr': 1.1e-3},
+        loss_fn=nn.SmoothL1Loss(),
+        batch_size=128,
+        train_step=int(1e5),
+        save_freq=-1,
+        device="cpu",
+        verbose=True
     )
+    env = get_env(train_config)
     s, _ = env.reset()
-    print(s.shape)
-    print(type(s))
