@@ -4,6 +4,7 @@ from typing import Union, List
 
 import numpy as np
 import torch
+from tqdm import tqdm
 
 from utils.config import TrainConfig, C51Config
 from utils.replay_buffer import ReplayBuffer
@@ -78,7 +79,7 @@ class C51(object):
         episode_infos = []
 
         obs, _ = self.env.reset() # (n_envs, state_len, *)
-        for step in range(self.train_steps // self.n_envs):
+        for step in tqdm(range(self.train_steps // self.n_envs)):
             action = self.predict(obs, self.eps) # (n_envs, *)
 
             # Take a step and store it on buffer

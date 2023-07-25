@@ -19,6 +19,12 @@ class PolicyNetwork(nn.Module):
                 nn.init.kaiming_normal_(m.weight)
                 nn.init.constant_(m.bias, 0.0)
 
+    def save(self, path):
+        torch.save(self.state_dict(), path)
+
+    def load(self, path):
+        self.load_state_dict(torch.load(path))
+
 
 class MLPNet(PolicyNetwork):
     def __init__(
@@ -74,7 +80,7 @@ class ConvNet(PolicyNetwork):
         """
 
         super().__init__()
-        # Expected input tensor shape: (B, 84, 84, state_len)
+        # Expected input tensor shape: (B, state_len, 84, 84)
         # Input (B, 210, 160, 3) will be processed by `ProcessFrame84` wrapper -> (B, 84, 84, state_len)
 
         self.conv = nn.Sequential(
@@ -85,7 +91,7 @@ class ConvNet(PolicyNetwork):
             nn.Conv2d(64, 64, kernel_size=3, stride=1),
             nn.ReLU(),
         )
-        self.fc = nn.Linear(7 * 7 * 16 * state_len, 512)
+        self.fc = nn.Linear(7 * 7 * 64, 512)
 
         if n_atom == -1:
             self.fc_q = nn.Linear(512, n_actions)
@@ -99,20 +105,15 @@ class ConvNet(PolicyNetwork):
         self._init_weight()
 
     def forward(self, x):
+        if x.dim() == 3:
+            x = x.unsqueeze(1)
         x = self.conv(x / 255.0) #TODO: Check
         x = x.flatten(start_dim=1)
         x = F.relu(self.fc(x))
         
-        # Output of C51 is PMFs of action value distribution
         if self.n_atom == -1:
             action_value = self.fc_q(x)
         else:
             action_value = F.softmax(self.fc_q(x).view(-1, self.n_actions, self.n_atom), dim=-1)
 
         return action_value
-
-    def save(self, PATH):
-        torch.save(self.state_dict(), PATH)
-
-    def load(self, PATH):
-        self.load_state_dict(torch.load(PATH))

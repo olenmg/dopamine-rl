@@ -31,7 +31,12 @@ from typing import Any, Dict, List, Optional, SupportsFloat, Tuple, Union
 import gymnasium as gym
 from gymnasium import spec
 from gymnasium.core import ActType, ObsType
-from gymnasium.wrappers import AtariPreprocessing, FrameStack
+from gymnasium.wrappers import (
+    AtariPreprocessing,
+    FrameStack,
+    ResizeObservation,
+    GrayScaleObservation
+)
 
 from rl_env import CUSTOM_ENVS
 
@@ -243,6 +248,8 @@ def get_env(train_config, **kwargs) -> gym.Env:
                 env = gym.make(train_config.env_id, **kwargs, frameskip=train_config.frame_skip)
         except:
             env = CUSTOM_ENVS[train_config.env_id](**kwargs)
+            env = GrayScaleObservation(env)
+            env = ResizeObservation(env, (84, 84))
 
         env = Monitor(env, './')
         if "ALE" in train_config.env_id:

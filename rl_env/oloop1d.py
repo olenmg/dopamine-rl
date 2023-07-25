@@ -64,8 +64,6 @@ class OpenLoop1DTrack(gym.Env):
         # Info
         info = {
             "cur_time": self.cur_time,
-            "start_time": self.start_time,
-            "end_time": self.end_time,
             "licking_cnt": self.licking_cnt,
             "lick_timing_eps": self.lick_timing_eps
         }
@@ -74,9 +72,9 @@ class OpenLoop1DTrack(gym.Env):
         if self.cur_time == self.water_spout:
             self.bar_states.append((140., 1., True))
 
-        return next_state, reward, done, info
+        return next_state, reward, done, False, info
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
         # Reset the state of the environment to an initial state
         self.cur_time = randrange(50)
         self.start_time = self.cur_time
@@ -89,7 +87,12 @@ class OpenLoop1DTrack(gym.Env):
         self.lick_timing.append(self.lick_timing_eps)
         self.lick_timing_eps = []
 
-        return self.state
+        info = {
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "water_spout": self.water_spout
+        }
+        return self.state, info
 
     def render(self, mode='human', close=False):
         # Render the environment to the screen
