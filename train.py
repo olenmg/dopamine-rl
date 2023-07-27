@@ -1,75 +1,52 @@
+import os
+import json
+import argparse
 from typing import List
 
 import torch
 import torch.nn as nn
-import gymnasium as gym
 
-from rl_algo import DQN, C51
-from utils.config import TrainConfig, DQNConfig, C51Config
-from utils.policy_networks import MLPNet, ConvNet
-from utils.loss import SoftCrossEntropyLoss
+from rl_algo import DQN, C51, QRDQN
+from utils.config import TrainConfig, DQNConfig, C51Config, QRConfig
+from utils.policy_networks import MlpPolicy, CnnPolicy
 from utils.plot import plot_train_result
 from utils.wrappers import get_env
 
-
-def train_c51(
-    train_config: TrainConfig
-) -> List[int]:
-    sample_env = get_env(train_config)
-    policy_network = ConvNet(
-        n_actions=sample_env.unwrapped.action_space[0].n,
-        state_len=train_config.state_len,
-        n_atom=51
-    )
-    sample_env.close()
-    del sample_env
-
-    c51_config = C51Config(
-        policy_network=policy_network,
-        v_min=-5,
-        v_max=10,
-        n_atom=51,
-        eps_start=0.9,
-        eps_end=0.01,
-        eps_decay=0.9999,
-        discount_rate=0.99,
-        soft_update_rate=0.01,
-        buffer_size=100000,
-        learning_starts=512,
-        train_freq=1,
-        target_update_freq=1
-    )
-
-    c51 = C51(
-        train_config=train_config,
-        algo_config=c51_config
-    )
-    result = c51.train()
-    
-    return result
-
+ALGO_CONFIG = {
+    'DQN': DQNConfig, 'C51': C51Config, 'QR': QRConfig
+}
+ALGO = {
+    'DQN': DQN, 'C51': C51, "QRDQN": QRDQN
+}
 
 if __name__ == "__main__":
-    train_config = TrainConfig(
-        run_name="test",
-        env_id="ALE/Breakout-v5",
-        n_envs=4,
-        state_len=4,
-        frame_skip=1,
-        random_seed=42,
-        optim_cls=torch.optim.Adam,
-        optim_kwargs={'lr': 1.1e-4},
-        loss_fn=SoftCrossEntropyLoss(),
-        batch_size=32,
-        train_step=int(1e5),
-        save_freq=-1,
-        device="cpu",
-        verbose=True
+    parser = argparse.ArgumentParser(description="Arguments for training")
+    parser.add_argument(
+        '--algo', type=str,
+        help="Algorithm", choices=['DQN', 'C51', 'QR']
     )
+    parser.add_argument(
+        '--train-cfg', type=str,
+        help="Path of train config"
+    )
+    parser.add_argument(
+        '--algo-cfg', type=str,
+        help="Path of algorithm config"
+    )
+    args = parser.parse_args()
 
-    result_infos = train_c51(train_config=train_config)
+    with open(os.path.join("configs/train_configs", args.train_cfg), "r") as f:
+        train_config = TrainConfig(**json.load(f))
+    with open(os.path.join("configs/algo_configs", args.algo_cfg), "r") as f:
+        algo_config = ALGO_CONFIG[args.algo](**json.load(f))
+
+    model = ALGO[args.algo](
+        train_config=train_config,
+        algo_config=algo_config
+    )
+    result = model.train()
     plot_train_result(
-        result=[info["r"] for info in result_infos],
-        label="C51",
+        result=[info["r"] for info in result],
+        label="DQN",
         alpha=0.9
     )

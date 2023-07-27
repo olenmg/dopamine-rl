@@ -62,7 +62,8 @@ class DQNConfig:
         buffer_size: int = 100000,
         learning_starts: int = 512,
         train_freq: int = 1,
-        target_update_freq: int = 2048
+        target_update_freq: int = 2048,
+        n_atom: int = -1 # Not used
     ):
         self.policy_kwargs = policy_kwargs
         self.eps_start = eps_start
