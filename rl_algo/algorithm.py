@@ -14,6 +14,7 @@ from utils.loss import CUSTOM_LOSS
 from utils.wrappers import get_env
 from utils.config import TrainConfig, DQNConfig, C51Config, QRConfig
 from utils.policy_networks import get_policy_networks
+from utils.epsilon_scheduler import LinearDecayES
 
 
 class RLAlgorithm(object):
@@ -92,6 +93,11 @@ class ValueIterationAlgorithm(RLAlgorithm):
             import_module("torch.optim"),
             self.optim_cls
         )(params=self.pred_net.parameters(), **self.optim_kwargs)
+        self.eps_scheduler = LinearDecayES(
+            init_eps=1.0,
+            milestones=[1000, 10000],
+            target_eps=[0.1, 0.01]
+        )
 
     def train(self) -> List[int]:
         episode_deque = deque(maxlen=100)
@@ -172,10 +178,7 @@ class ValueIterationAlgorithm(RLAlgorithm):
 
     # Update epsilon over training process.
     def update_epsilon(self) -> None:
-        self.eps = max(
-            self.eps * self.eps_decay,
-            self.eps_end
-        )
+        self.eps = self.eps_scheduler.step()
 
     # Save model
     def save_model(

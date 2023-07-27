@@ -1,5 +1,5 @@
 {
-    "run_name": "test",
+    "run_name": "c51_breakout",
     "env_id": "ALE/Breakout-v5",
     "n_envs": 4,
     "state_len": 4,
@@ -12,9 +12,9 @@
         "lr": 0.00011
     },
     "batch_size": 32,
-    "train_step": 5000,
-    "save_freq": 1000,
-    "logging_freq": 1000,
-    "device": "cpu",
+    "train_step": 10000000,
+    "save_freq": 100000,
+    "logging_freq": 10000,
+    "device": "auto",
     "verbose": true
 }
