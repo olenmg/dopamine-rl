@@ -240,7 +240,7 @@ class ResultsWriter:
 
 def get_env(train_config, **kwargs) -> gym.Env:
     # Wrapping
-    def wrap_():
+    def wrap_(i):
         try:
             if train_config.frame_skip == 1 and ("ALE" not in train_config.env_id):
                 env = gym.make(train_config.env_id, **kwargs)
@@ -251,13 +251,15 @@ def get_env(train_config, **kwargs) -> gym.Env:
             env = GrayScaleObservation(env)
             env = ResizeObservation(env, (84, 84))
 
-        env = Monitor(env, './')
+        env = Monitor(env, os.path.join("results", train_config.run_name, f"{i}.monitor.csv"))
+
         if "ALE" in train_config.env_id:
             env = AtariPreprocessing(env)
         if train_config.state_len > 1:
             env = FrameStack(env, num_stack=train_config.state_len)
         return env
-    env = gym.vector.AsyncVectorEnv([wrap_ for _ in range(train_config.n_envs)])
+    
+    env = gym.vector.AsyncVectorEnv([lambda x=i: wrap_(x) for i in range(train_config.n_envs)])
     return env 
 
 

@@ -5,3 +5,4 @@ conda install -c conda-forge opencv
 
 pip install gymnasium\[all\]
 pip install gymnasium\[accept-rom-license\]
+pip install imageio
