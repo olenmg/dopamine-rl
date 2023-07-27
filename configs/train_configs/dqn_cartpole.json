@@ -1,5 +1,5 @@
 {
-    "run_name": "test",
+    "run_name": "DQN-CartPole-Default",
     "env_id": "CartPole-v1",
     "n_envs": 1,
     "state_len": 1,
@@ -15,6 +15,6 @@
     "train_step": 10000,
     "save_freq": 1000,
     "logging_freq": 1000,
-    "device": "cpu",
+    "device": "auto",
     "verbose": true
 }

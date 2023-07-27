@@ -14,9 +14,10 @@ class DQN(ValueIterationAlgorithm):
     def __init__(
         self,
         train_config: TrainConfig,
-        algo_config: DQNConfig
+        algo_config: DQNConfig,
+        render: bool = False
     ):
-        super().__init__(train_config=train_config, algo_config=algo_config)
+        super().__init__(train_config=train_config, algo_config=algo_config, render=render)
         assert isinstance(algo_config, DQNConfig), "Given config instance should be a DQNConfig class."
 
         # DQN configurations

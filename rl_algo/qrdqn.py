@@ -14,9 +14,10 @@ class QRDQN(ValueIterationAlgorithm):
     def __init__(
         self,
         train_config: TrainConfig,
-        algo_config: QRConfig
+        algo_config: QRConfig,
+        render: bool = False
     ):
-        super().__init__(train_config=train_config, algo_config=algo_config)
+        super().__init__(train_config=train_config, algo_config=algo_config, render=render)
         assert isinstance(algo_config, QRConfig), "Given config instance should be a QRConfig class."
 
     # Update online network with samples in the replay memory. 

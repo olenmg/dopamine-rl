@@ -1,5 +1,5 @@
 {
-    "run_name": "c51_breakout",
+    "run_name": "C51-Breakout-Default",
     "env_id": "ALE/Breakout-v5",
     "n_envs": 4,
     "state_len": 4,

@@ -1,11 +1,11 @@
 {
-    "run_name": "C51-CartPole-Default",
+    "run_name": "test-DQN",
     "env_id": "CartPole-v1",
     "n_envs": 1,
     "state_len": 1,
     "frame_skip": 1,
     "random_seed": 42,
-    "loss_cls": "SoftCrossEntropyLoss",
+    "loss_cls": "SmoothL1Loss",
     "loss_kwargs": {},
     "optim_cls": "Adam",
     "optim_kwargs": {

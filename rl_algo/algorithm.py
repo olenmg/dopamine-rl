@@ -21,11 +21,12 @@ class RLAlgorithm(object):
     def __init__(
         self,
         train_config: TrainConfig,
-        algo_config: Union[DQNConfig, C51Config, QRConfig]
+        algo_config: Union[DQNConfig, C51Config, QRConfig],
+        render: bool = False
     ):
         # Train configurations
         self.run_name = train_config.run_name
-        self.env = get_env(train_config)
+        self.env = get_env(train_config, render=render)
         self.n_act = self.env.unwrapped.action_space[0].n
 
         self.n_envs = train_config.n_envs
@@ -67,14 +68,18 @@ class RLAlgorithm(object):
     def save_model(self) -> None:
         raise NotImplementedError
 
+    def load_model(self) -> None:
+        raise NotImplementedError
+
 
 class ValueIterationAlgorithm(RLAlgorithm):
     def __init__(
         self,
         train_config: TrainConfig,
-        algo_config: Union[DQNConfig, C51Config, QRConfig]
+        algo_config: Union[DQNConfig, C51Config, QRConfig],
+        render: bool = False
     ):
-        super().__init__(train_config=train_config, algo_config=algo_config)
+        super().__init__(train_config=train_config, algo_config=algo_config, render=render)
 
         # Policy networks
         self.pred_net = get_policy_networks(
@@ -185,5 +190,14 @@ class ValueIterationAlgorithm(RLAlgorithm):
         pred_net_fname: str = "pred_net.pt",
         target_net_fname: str = "target_net.pt"
     ) -> None:
-        self.pred_net.save(os.path.join(self.save_path, pred_net_fname))
-        self.target_net.save(os.path.join(self.save_path, target_net_fname))
+        torch.save(self.pred_net.state_dict(), os.path.join(self.save_path, pred_net_fname))
+        torch.save(self.target_net.state_dict(), os.path.join(self.save_path, target_net_fname))
+
+    # Save model
+    def load_model(
+        self,
+        pred_net_fname: str = "pred_net.pt",
+        target_net_fname: str = "target_net.pt"
+    ) -> None:
+        self.pred_net.load_state_dict(torch.load(os.path.join(self.save_path, pred_net_fname)))
+        self.target_net.load_state_dict(torch.load(os.path.join(self.save_path, target_net_fname)))

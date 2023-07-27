@@ -1,16 +1,11 @@
 import os
 import json
 import argparse
-from typing import List
-
-import torch
-import torch.nn as nn
 
 from rl_algo import DQN, C51, QRDQN
 from utils.config import TrainConfig, DQNConfig, C51Config, QRConfig
-from utils.policy_networks import MlpPolicy, CnnPolicy
 from utils.plot import plot_train_result
-from utils.wrappers import get_env
+from render import render
 
 ALGO_CONFIG = {
     'DQN': DQNConfig, 'C51': C51Config, 'QR': QRConfig
@@ -47,6 +42,8 @@ if __name__ == "__main__":
     result = model.train()
     plot_train_result(
         result=[info["r"] for info in result],
-        label="DQN",
+        label=train_config.run_name,
+        save_path=os.path.join("results", train_config.run_name, f"{train_config.run_name}.png"),
         alpha=0.9
     )
+    render(args)

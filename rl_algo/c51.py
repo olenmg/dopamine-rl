@@ -13,9 +13,10 @@ class C51(ValueIterationAlgorithm):
     def __init__(
         self,
         train_config: TrainConfig,
-        algo_config: C51Config
+        algo_config: C51Config,
+        render: bool = False
     ):
-        super().__init__(train_config=train_config, algo_config=algo_config)
+        super().__init__(train_config=train_config, algo_config=algo_config, render=render)
         assert isinstance(algo_config, C51Config), "Given config instance should be a C51Config class."
 
         # C51 configurations
