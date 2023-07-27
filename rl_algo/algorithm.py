@@ -45,9 +45,9 @@ class RLAlgorithm(object):
         self.save_path = os.path.join("results", train_config.run_name)
         os.makedirs(self.save_path, exist_ok=True)
         print(train_config.__dict__)
-        with open("train_cfg.json", "w") as f:
+        with open(os.path.join(self.save_path, "train_cfg.json"), "w") as f:
             f.write(json.dumps(train_config.__dict__, indent=4))
-        with open("algo_cfg.json", "w") as f:
+        with open(os.path.join(self.save_path, "algo_cfg.json"), "w") as f:
             f.write(json.dumps(algo_config.__dict__, indent=4))
 
         # Others
