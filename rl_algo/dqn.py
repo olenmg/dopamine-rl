@@ -1,22 +1,22 @@
 from copy import deepcopy
-from collections import deque
-from typing import Union, List
+from typing import Union
 
 import numpy as np
 import torch
-from tqdm import tqdm
 
-from utils.config import TrainConfig, DQNConfig
+from rl_algo.algorithm import ValueIterationAlgorithm
 from utils.replay_buffer import ReplayBuffer
-from utils.wrappers import get_env
+from utils.config import TrainConfig, DQNConfig
+from utils.policy_networks import get_policy_networks
 
 
-class DQN(object):
+class DQN(ValueIterationAlgorithm):
     def __init__(
         self,
         train_config: TrainConfig,
         algo_config: DQNConfig
     ):
+        super().__init__(train_config=train_config, algo_config=algo_config)
         assert isinstance(algo_config, DQNConfig), "Given config instance should be a DQNConfig class."
 
         # DQN configurations
@@ -33,89 +33,7 @@ class DQN(object):
         self.target_update_freq = algo_config.target_update_freq
 
         self.memory = ReplayBuffer(size=algo_config.buffer_size)
-
-        # Train configurations
-        self.run_name = train_config.run_name
-        self.env = get_env(train_config)
-        self.n_act = self.env.unwrapped.action_space[0].n
-
-        self.n_envs = train_config.n_envs
-        self.state_len = train_config.state_len
-
-        self.batch_size = train_config.batch_size
-        self.train_steps = train_config.train_step
-        self.save_freq = train_config.save_freq
-
-        self.device = torch.device(train_config.device)        
-        self.verbose = train_config.verbose
-
-        # Policy network & Training utilities
-        self.pred_net = algo_config.policy_network.to(self.device)
-        self.target_net = deepcopy(self.pred_net).to(self.device)
-        self.target_net.eval()
-
-        self.criterion = train_config.loss_fn
-        self.optimizer = train_config.optim_cls(
-            params=self.pred_net.parameters(),
-            **train_config.optim_kwargs
-        )
-
-        # Others
-        self.rng = np.random.default_rng(train_config.random_seed)
         self.buffer_cnt = 0
-
-    def train(self) -> List[int]:
-        episode_deque = deque(maxlen=100)
-        episode_infos = []
-
-        obs, _ = self.env.reset() # (n_envs, state_len, *)
-        for step in tqdm(range(self.train_steps // self.n_envs)):
-            action = self.predict(obs, self.eps) # (n_envs, *)
-
-            # Take a step and store it on buffer
-            next_obs, reward, terminated, truncated, infos = self.env.step(action)
-            self.add_to_buffer(obs, action, next_obs, reward, terminated, truncated)
-
-            # Logging
-            for info in infos.get("final_info", []):
-                if info:
-                    episode_infos.append(info["episode"])
-                    episode_deque.append(info["episode"]["r"])
-
-            # Learning if enough timestep has been gone 
-            if (self.buffer_cnt >= self.learning_starts) \
-                    and (self.buffer_cnt % self.train_freq == 0):
-                self.update_network()
-
-            # Periodically copies the parameter of the pred network to the target network
-            if step % self.target_update_freq == 0:
-                self.update_target()
-
-            # Verbose (stdout logging)
-            if self.verbose and episode_deque and (step % 10000 == 0): # Logging only representative env info. (1st env.)
-                print(f"STEP: {step} | REWARD: {np.mean(episode_deque):.2f} | RECENT REWARD: {episode_deque[-1]:.2f} | EPSILON: {self.eps:.3f}")
-
-            obs = next_obs
-
-            # Update the epsilon value
-            self.update_epsilon()
-        self.env.close()
-
-        return episode_infos
-
-    def add_to_buffer(
-        self,
-        obs: np.ndarray, # float, (n_envs, state_len, *)
-        action: np.ndarray, # int, (n_envs, *)
-        next_obs: np.ndarray, # float, (n_envs, state_len, *)
-        reward: np.ndarray, # int, (n_envs, *)
-        terminated: np.ndarray, # bool, (n_envs, *)
-        truncated: np.ndarray # bool, (n_envs, *)
-    ) -> None:
-        self.buffer_cnt += 1
-        done = np.any([terminated, truncated], axis=0)
-        for i in range(self.n_envs):
-            self.memory.add(obs[i], action[i], reward[i], next_obs[i], done[i])
 
     # Update online network with samples in the replay memory. 
     def update_network(self) -> None:
@@ -138,14 +56,6 @@ class DQN(object):
         loss.backward()
         self.optimizer.step()
 
-    # Update the target network's weights with the online network's one. 
-    def update_target(self) -> None:
-        for pred_param, target_param in \
-                zip(self.pred_net.parameters(), self.target_net.parameters()):
-            target_param.data.copy_(
-                self.tau * pred_param.data + (1.0 - self.tau) * target_param
-            )
-    
     # Return desired action(s) that maximizes the Q-value for given observation(s) by the online network.
     def predict(
         self,
@@ -176,10 +86,3 @@ class DQN(object):
             action = self.rng.choice(self.n_act, size=(self.n_envs, ))
 
         return action
-    
-    # Update epsilon over training process.
-    def update_epsilon(self) -> None:
-        self.eps = max(
-            self.eps * self.eps_decay,
-            self.eps_end
-        )

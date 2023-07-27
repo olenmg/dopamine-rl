@@ -1,10 +1,10 @@
 from typing import List
 
+import gymnasium as gym
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 
 class PolicyNetwork(nn.Module):
     def __init__(self):
@@ -26,7 +26,7 @@ class PolicyNetwork(nn.Module):
         self.load_state_dict(torch.load(path))
 
 
-class MLPNet(PolicyNetwork):
+class MlpPolicy(PolicyNetwork):
     def __init__(
         self,
         n_actions: int,
@@ -68,7 +68,7 @@ class MLPNet(PolicyNetwork):
         return action_value
 
 
-class ConvNet(PolicyNetwork):
+class CnnPolicy(PolicyNetwork):
     def __init__(
         self,
         n_actions: int,
@@ -117,3 +117,31 @@ class ConvNet(PolicyNetwork):
             action_value = F.softmax(self.fc_q(x).view(-1, self.n_actions, self.n_atom), dim=-1)
 
         return action_value
+
+
+def get_policy_networks(
+    policy_type: str,
+    env: gym.Env,
+    state_len: int,
+    n_atom: int = -1,
+    hidden_sizes: List[int] = [64, ]
+) -> PolicyNetwork:
+    n_actions = env.unwrapped.action_space[0].n
+
+    if policy_type == "MlpPolicy":
+        obs_space = env.observation_space.shape[-1]
+        return MlpPolicy(
+            n_actions=n_actions,
+            input_size=obs_space,
+            hidden_sizes=hidden_sizes,
+            state_len=state_len,
+            n_atom=n_atom
+        )
+    elif policy_type == "CnnPolicy":
+        return CnnPolicy(
+            n_actions=n_actions,
+            state_len=state_len,
+            n_atom=n_atom
+        )
+    else:
+        raise ValueError(policy_type)
