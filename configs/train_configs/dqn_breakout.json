@@ -9,11 +9,11 @@
     "loss_kwargs": {},
     "optim_cls": "Adam",
     "optim_kwargs": {
-        "lr": 0.00011
+        "lr": 1e-4
     },
     "batch_size": 32,
     "train_step": 10000000,
-    "save_freq": 10000,
+    "save_freq": 100000,
     "logging_freq": 10000,
     "device": "auto",
     "verbose": true
