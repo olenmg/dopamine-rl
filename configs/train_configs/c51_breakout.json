@@ -1,7 +1,7 @@
 {
     "run_name": "C51-Breakout-Default",
     "env_id": "ALE/Breakout-v5",
-    "n_envs": 4,
+    "n_envs": 16,
     "state_len": 4,
     "frame_skip": 1,
     "random_seed": 42,
@@ -9,12 +9,13 @@
     "loss_kwargs": {},
     "optim_cls": "Adam",
     "optim_kwargs": {
-        "lr": 1e-4
+        "lr": 0.0000625,
+        "eps": 0.00015
     },
     "batch_size": 32,
-    "train_step": 10000000,
+    "train_step": 200000000,
     "save_freq": 100000,
-    "logging_freq": 10000,
+    "logging_freq": 100000,
     "device": "auto",
     "verbose": true
 }

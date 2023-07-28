@@ -99,8 +99,8 @@ class ValueIterationAlgorithm(RLAlgorithm):
         )(params=self.pred_net.parameters(), **self.optim_kwargs)
         self.eps_scheduler = LinearDecayES(
             init_eps=1.0,
-            milestones=[1000, 10000],
-            target_eps=[0.1, 0.01]
+            milestones=[62500],
+            target_eps=[0.01]
         )
 
     def train(self) -> List[int]:

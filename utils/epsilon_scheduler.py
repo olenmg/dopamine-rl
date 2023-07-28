@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # Triple linear decay
     eps_scheduler = LinearDecayES(
         init_eps=1.0,
-        milestones=[100, 200, 800],
-        target_eps=[0.5, 0.2, 0.1]
+        milestones=[25000, 100000],
+        target_eps=[0.1, 0.01]
     )
-    simulate_eps_scheduler(eps_scheduler, 1000)
+    simulate_eps_scheduler(eps_scheduler, 10000000)
