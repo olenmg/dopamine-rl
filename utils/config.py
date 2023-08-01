@@ -62,8 +62,7 @@ class DQNConfig:
         buffer_size: int = 100000,
         learning_starts: int = 512,
         train_freq: int = 1,
-        target_update_freq: int = 2048,
-        n_atom: int = -1 # Not used
+        target_update_freq: int = 2048
     ):
         self.policy_kwargs = policy_kwargs
         self.eps_cls = eps_cls
@@ -74,7 +73,6 @@ class DQNConfig:
         self.learning_starts = learning_starts
         self.train_freq = train_freq
         self.target_update_freq = target_update_freq
-        self.n_atom = -1
 
 
 class C51Config(DQNConfig):
@@ -117,7 +115,7 @@ class QRConfig(DQNConfig):
     def __init__(
         self,
         policy_kwargs: dict,
-        n_atom: int = 51,
+        n_atom: int = 50,
         eps_cls: str = "LinearDecayLS",
         eps_kwargs: dict = {
             "init_eps": 1.0,

@@ -29,15 +29,9 @@ class QRDQN(ValueIterationAlgorithm):
         self.memory = ReplayBuffer(size=algo_config.buffer_size)
         self.buffer_cnt = 0
 
-        self.value_range = torch.linspace(
-            algo_config.v_min,
-            algo_config.v_max,
-            algo_config.n_atom
-        ).to(self.device)
-        self.v_min = algo_config.v_min
-        self.v_max = algo_config.v_max
-        self.n_atom = algo_config.n_atom
-        self.v_step = (self.v_max - self.v_min) / (self.n_atom - 1)
+        self.n_quant = algo_config.n_atom
+        quants = np.linspace(0.0, 1.0, self.n_quant + 1)
+        self.quants_target = (quants[:-1] + quants[1:]) / 2
 
     # Update online network with samples in the replay memory. 
     def update_network(self) -> None:
@@ -52,7 +46,8 @@ class QRDQN(ValueIterationAlgorithm):
         # Get q-value from the target network
         with torch.no_grad():
             # Calculate the estimated value distribution with target networks
-            next_q_dist = self.target_net(next_obses) # (B, n_act, n_atom)
+            next_q_dist = self.target_net(next_obses) # (B, n_act, n_quant)
+            #TODO Start from here
             opt_acts = torch.sum(
                 next_q_dist * self.value_range.view(1, 1, -1), dim=-1
             ).argmax(dim=-1).view(-1, 1, 1) # (B, 1, 1)

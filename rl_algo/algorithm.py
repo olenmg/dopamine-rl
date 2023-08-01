@@ -83,7 +83,7 @@ class ValueIterationAlgorithm(RLAlgorithm):
         self.pred_net = get_policy_networks(
             env=self.env,
             state_len=self.state_len,
-            n_atom=algo_config.n_atom,
+            n_atom=getattr(algo_config, "n_atom", -1),
             **algo_config.policy_kwargs
         ).to(self.device)
         self.target_net = deepcopy(self.pred_net).to(self.device)

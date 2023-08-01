@@ -17,6 +17,5 @@
     "buffer_size": 100000,
     "learning_starts": 512,
     "train_freq": 1,
-    "target_update_freq": 512,
-    "n_atom": -1
+    "target_update_freq": 512
 }
