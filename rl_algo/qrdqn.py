@@ -16,15 +16,10 @@ class QRDQN(ValueIterationAlgorithm):
         render: bool = False
     ):
         super().__init__(train_config=train_config, algo_config=algo_config, render=render)
-        assert isinstance(algo_config, QRConfig), "Given config instance should be a C51Config class."
+        assert isinstance(algo_config, QRConfig), "Given config instance should be a QRConfig class."
 
-        # QR-DQN configurations
-        self.eps = algo_config.eps_start
-        self.eps_decay = algo_config.eps_decay
-        self.eps_end = algo_config.eps_end
-
+        # QRDQN configurations
         self.gamma = algo_config.discount_rate
-
         self.tau = algo_config.soft_update_rate
 
         self.learning_starts = algo_config.learning_starts
