@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Union
 
 import numpy as np
@@ -20,12 +19,7 @@ class C51(ValueIterationAlgorithm):
         assert isinstance(algo_config, C51Config), "Given config instance should be a C51Config class."
 
         # C51 configurations
-        self.eps = algo_config.eps_start
-        self.eps_decay = algo_config.eps_decay
-        self.eps_end = algo_config.eps_end
-
         self.gamma = algo_config.discount_rate
-
         self.tau = algo_config.soft_update_rate
 
         self.learning_starts = algo_config.learning_starts

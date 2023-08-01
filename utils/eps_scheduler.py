@@ -1,7 +1,5 @@
 from typing import Union, List
 
-import numpy as np
-
 
 class EpsilonScheduler(object):
     def __init__(self):
@@ -11,6 +9,9 @@ class EpsilonScheduler(object):
     def step(self) -> float:
         self.step_count += 1
         raise NotImplementedError
+
+    def get_eps(self) -> float:
+        return self.epsilon
 
 
 class LinearDecayES(EpsilonScheduler):

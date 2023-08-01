@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class SoftCrossEntropyLoss(nn.Module):
@@ -18,8 +17,3 @@ class SoftCrossEntropyLoss(nn.Module):
             out, shape: (B, )
         """
         return torch.mean(y * (-torch.log(pred + 1e-8)))
-
-
-CUSTOM_LOSS = {
-    "SoftCrossEntropyLoss": SoftCrossEntropyLoss
-}

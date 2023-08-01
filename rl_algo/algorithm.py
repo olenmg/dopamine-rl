@@ -10,11 +10,9 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from utils.loss import CUSTOM_LOSS
 from utils.wrappers import get_env
 from utils.config import TrainConfig, DQNConfig, C51Config, QRConfig
 from utils.policy_networks import get_policy_networks
-from utils.epsilon_scheduler import LinearDecayES
 
 
 class RLAlgorithm(object):
@@ -91,17 +89,19 @@ class ValueIterationAlgorithm(RLAlgorithm):
         self.target_net = deepcopy(self.pred_net).to(self.device)
         self.target_net.eval()
 
-        self.criterion = CUSTOM_LOSS[self.loss_cls](**self.loss_kwargs) if self.loss_cls in CUSTOM_LOSS \
-            else getattr(import_module("torch.nn"), self.loss_cls)(**self.loss_kwargs)
+        self.criterion = getattr(
+            import_module("utils.loss") if self.loss_cls in dir(import_module("utils.loss")) \
+                else import_module("torch.nn"), self.loss_cls
+        )(**self.loss_kwargs)
         self.optimizer = getattr(
             import_module("torch.optim"),
             self.optim_cls
         )(params=self.pred_net.parameters(), **self.optim_kwargs)
-        self.eps_scheduler = LinearDecayES(
-            init_eps=1.0,
-            milestones=[62500],
-            target_eps=[0.01]
-        )
+        self.eps_scheduler = getattr(
+            import_module("utils.eps_scheduler"),
+            algo_config.eps_cls
+        )(**algo_config.eps_kwargs)
+        self.eps = self.eps_scheduler.get_eps()
 
     def train(self) -> List[int]:
         episode_deque = deque(maxlen=100)

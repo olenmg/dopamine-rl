@@ -1,7 +1,4 @@
 import torch
-import torch.nn as nn
-
-from .policy_networks import PolicyNetwork
 
 
 class TrainConfig:
@@ -54,9 +51,12 @@ class DQNConfig:
     def __init__(
         self,
         policy_kwargs: dict,
-        eps_start: float = 0.3,
-        eps_end: float = 0.01,
-        eps_decay: float = 0.9995,  
+        eps_cls: str = "LinearDecayLS",
+        eps_kwargs: dict = {
+            "init_eps": 1.0,
+            "milestones": 50000,
+            "target_eps": 0.01
+        },
         discount_rate: float = 0.98,
         soft_update_rate: float = 1.0,
         buffer_size: int = 100000,
@@ -66,9 +66,8 @@ class DQNConfig:
         n_atom: int = -1 # Not used
     ):
         self.policy_kwargs = policy_kwargs
-        self.eps_start = eps_start
-        self.eps_end = eps_end
-        self.eps_decay = eps_decay
+        self.eps_cls = eps_cls
+        self.eps_kwargs = eps_kwargs
         self.discount_rate = discount_rate
         self.soft_update_rate = soft_update_rate
         self.buffer_size = buffer_size
@@ -82,12 +81,15 @@ class C51Config(DQNConfig):
     def __init__(
         self,
         policy_kwargs: dict,
-        v_min: float,
-        v_max: float,
+        v_min: float = -5.,
+        v_max: float = -5.,
         n_atom: int = 51,
-        eps_start: float = 0.3,
-        eps_end: float = 0.01,
-        eps_decay: float = 0.9995,  
+        eps_cls: str = "LinearDecayLS",
+        eps_kwargs: dict = {
+            "init_eps": 1.0,
+            "milestones": 50000,
+            "target_eps": 0.01
+        },
         discount_rate: float = 0.98,
         soft_update_rate: float = 1.0,
         buffer_size: int = 100000,
@@ -97,42 +99,47 @@ class C51Config(DQNConfig):
     ):
         super().__init__(
             policy_kwargs=policy_kwargs,
-            eps_start=eps_start,
-            eps_end=eps_end,
-            eps_decay=eps_decay,
+            eps_cls=eps_cls,
+            eps_kwargs=eps_kwargs,
             discount_rate=discount_rate,
             soft_update_rate=soft_update_rate,
             buffer_size=buffer_size,
             learning_starts=learning_starts,
             train_freq=train_freq,
-            target_update_freq=target_update_freq,
+            target_update_freq=target_update_freq
         )
         self.v_min = v_min
         self.v_max = v_max
         self.n_atom = n_atom
 
 
-class QRConfig: #TODO
+class QRConfig(DQNConfig):
     def __init__(
         self,
         policy_kwargs: dict,
-        eps_start: float = 0.3,
-        eps_end: float = 0.01,
-        eps_decay: float = 0.9995,  
+        n_atom: int = 51,
+        eps_cls: str = "LinearDecayLS",
+        eps_kwargs: dict = {
+            "init_eps": 1.0,
+            "milestones": 50000,
+            "target_eps": 0.01
+        },
         discount_rate: float = 0.98,
         soft_update_rate: float = 1.0,
         buffer_size: int = 100000,
         learning_starts: int = 512,
         train_freq: int = 1,
-        target_update_freq: int = 2048
+        target_update_freq: int = 512,
     ):
-        self.policy_kwargs = policy_kwargs
-        self.eps_start = eps_start
-        self.eps_end = eps_end
-        self.eps_decay = eps_decay
-        self.discount_rate = discount_rate
-        self.soft_update_rate = soft_update_rate
-        self.buffer_size = buffer_size
-        self.learning_starts = learning_starts
-        self.train_freq = train_freq
-        self.target_update_freq = target_update_freq
+        super().__init__(
+            policy_kwargs=policy_kwargs,
+            eps_cls=eps_cls,
+            eps_kwargs=eps_kwargs,
+            discount_rate=discount_rate,
+            soft_update_rate=soft_update_rate,
+            buffer_size=buffer_size,
+            learning_starts=learning_starts,
+            train_freq=train_freq,
+            target_update_freq=target_update_freq
+        )
+        self.n_atom = n_atom

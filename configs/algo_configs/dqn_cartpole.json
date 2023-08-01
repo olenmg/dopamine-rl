@@ -6,9 +6,12 @@
             72
         ]
     },
-    "eps_start": 0.9,
-    "eps_end": 0.01,
-    "eps_decay": 0.9999,
+    "eps_cls": "LinearDecayES",
+    "eps_kwargs": {
+        "init_eps": 1.0,
+        "milestones": 50000,
+        "target_eps": 0.01
+    },
     "discount_rate": 0.99,
     "soft_update_rate": 1.0,
     "buffer_size": 100000,

@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Union
 
 import numpy as np
@@ -7,7 +6,6 @@ import torch
 from rl_algo.algorithm import ValueIterationAlgorithm
 from utils.replay_buffer import ReplayBuffer
 from utils.config import TrainConfig, DQNConfig
-from utils.policy_networks import get_policy_networks
 
 
 class DQN(ValueIterationAlgorithm):
@@ -21,12 +19,7 @@ class DQN(ValueIterationAlgorithm):
         assert isinstance(algo_config, DQNConfig), "Given config instance should be a DQNConfig class."
 
         # DQN configurations
-        self.eps = algo_config.eps_start
-        self.eps_decay = algo_config.eps_decay
-        self.eps_end = algo_config.eps_end
-
         self.gamma = algo_config.discount_rate
-
         self.tau = algo_config.soft_update_rate
 
         self.learning_starts = algo_config.learning_starts
