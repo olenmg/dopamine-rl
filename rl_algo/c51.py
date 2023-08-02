@@ -56,10 +56,9 @@ class C51(ValueIterationAlgorithm):
             opt_acts = torch.sum(
                 next_q_dist * self.value_range.view(1, 1, -1), dim=-1
             ).argmax(dim=-1).view(-1, 1, 1) # (B, 1, 1)
-
-            est_q_dist = rewards.view(-1, 1) + self.gamma * self.target_net(
-                next_obses
-            ).gather(1, opt_acts.expand(-1, 1, self.n_atom)).squeeze() # (B, n_atom)
+            est_q_dist = next_q_dist.gather(
+                1, opt_acts.expand(-1, 1, self.n_atom)
+            ).squeeze() # (B, n_atom)
 
             # Calculate the y-distribution with estimated value distribution
             next_v_range = rewards.view(-1, 1) + \

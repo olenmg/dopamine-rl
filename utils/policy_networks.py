@@ -107,7 +107,7 @@ class CnnPolicy(PolicyNetwork):
     def forward(self, x):
         if x.dim() == 3:
             x = x.unsqueeze(1)
-        x = self.conv(x / 255.0) #TODO: Check
+        x = self.conv(x / 255.0)
         x = x.flatten(start_dim=1)
         x = F.relu(self.fc(x))
         
