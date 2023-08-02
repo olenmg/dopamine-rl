@@ -31,6 +31,8 @@ class DQN(ValueIterationAlgorithm):
 
     # Update online network with samples in the replay memory. 
     def update_network(self) -> None:
+        self.pred_net.train()
+
         # Do sampling from the buffer
         obses, actions, rewards, next_obses, dones = tuple(map(
             lambda x: torch.from_numpy(x).to(self.device),
@@ -43,7 +45,6 @@ class DQN(ValueIterationAlgorithm):
         y = rewards + self.gamma * ~dones * q_val # ~dones == (1 - dones)
 
         # Forward pass & Backward pass
-        self.pred_net.train()
         self.optimizer.zero_grad()
         pred = self.pred_net(obses).gather(1, actions.unsqueeze(1)).squeeze(-1)
         loss = self.criterion(pred, y)

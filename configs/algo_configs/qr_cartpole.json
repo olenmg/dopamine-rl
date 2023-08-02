@@ -1,0 +1,21 @@
+{
+    "policy_kwargs": {
+        "policy_type": "MlpPolicy",
+        "hidden_sizes": [
+            128
+        ]
+    },
+    "eps_cls": "LinearDecayES",
+    "eps_kwargs": {
+        "init_eps": 1.0,
+        "milestones": [1000, 10000],
+        "target_eps": [0.1, 0.01]
+    },
+    "discount_rate": 0.99,
+    "soft_update_rate": 0.01,
+    "buffer_size": 10000,
+    "learning_starts": 1000,
+    "train_freq": 1,
+    "target_update_freq": 1,
+    "n_atom": 50
+}

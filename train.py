@@ -8,7 +8,7 @@ from utils.plot import plot_train_result
 from render import render
 
 ALGO_CONFIG = {
-    'DQN': DQNConfig, 'C51': C51Config, 'QR': QRConfig
+    'DQN': DQNConfig, 'C51': C51Config, 'QRDQN': QRConfig
 }
 ALGO = {
     'DQN': DQN, 'C51': C51, "QRDQN": QRDQN
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Arguments for training")
     parser.add_argument(
         '--algo', type=str,
-        help="Algorithm", choices=['DQN', 'C51', 'QR']
+        help="Algorithm", choices=['DQN', 'C51', 'QRDQN']
     )
     parser.add_argument(
         '--train-cfg', type=str,

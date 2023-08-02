@@ -30,11 +30,13 @@ class QRDQN(ValueIterationAlgorithm):
         self.buffer_cnt = 0
 
         self.n_quant = algo_config.n_atom
-        quants = torch.linspace(0.0, 1.0, self.n_quant + 1, dtype=torch.float32).to(device)
+        quants = torch.linspace(0.0, 1.0, self.n_quant + 1, dtype=torch.float32).to(self.device)
         self.quants_target = (quants[:-1] + quants[1:]) / 2
 
     # Update online network with samples in the replay memory. 
     def update_network(self) -> None:
+        self.pred_net.train()
+
         # Do sampling from the buffer
         obses, actions, rewards, next_obses, dones = tuple(map(
             lambda x: torch.from_numpy(x).to(self.device),
@@ -48,7 +50,7 @@ class QRDQN(ValueIterationAlgorithm):
         with torch.no_grad():
             # Estimated quantiles with target networks
             next_q_quants = self.target_net(next_obses) # (B, n_act, n_quant)
-            opt_acts = torch.mean(next_q_quants, dim=-1).argmax(dim=-1) # (B, )
+            opt_acts = torch.mean(next_q_quants, dim=-1).argmax(dim=-1).view(-1, 1, 1) # (B, 1, 1)
             est_quants = next_q_quants.gather(
                 1, opt_acts.expand(-1, 1, self.n_quant)
             ).squeeze() # (B, n_quant)
@@ -60,7 +62,6 @@ class QRDQN(ValueIterationAlgorithm):
         ).squeeze() # (B, n_quant)
 
         # Forward pass & Backward pass
-        self.pred_net.train()
         self.optimizer.zero_grad()
         loss = self.criterion(pred_quants, y_quants)
         loss.backward()

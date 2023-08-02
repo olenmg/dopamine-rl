@@ -42,6 +42,8 @@ class C51(ValueIterationAlgorithm):
 
     # Update online network with samples in the replay memory. 
     def update_network(self) -> None:
+        self.pred_net.train()
+
         # Do sampling from the buffer
         obses, actions, rewards, next_obses, dones = tuple(map(
             lambda x: torch.from_numpy(x).to(self.device),
@@ -81,7 +83,6 @@ class C51(ValueIterationAlgorithm):
         ).squeeze() # (B, n_atom)
 
         # Forward pass & Backward pass
-        self.pred_net.train()
         self.optimizer.zero_grad()
         loss = self.criterion(pred_dist, y_dist)
         loss.backward()
