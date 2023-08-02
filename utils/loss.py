@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 
 class SoftCrossEntropyLoss(nn.Module):
     def __init__(self):
@@ -34,20 +34,12 @@ class QuantileHuberLoss(nn.Module):
         Return:
             out, tensor(int)
         """
-        target_support = y.unsqueeze(-1).tile((1, 1, 4))
-        pred_support = y.unsqueeze(-1).tile((1, 1, 4)).transpose(2, 1)
-        u = target_support - pred_support
+        target_quant = target_quant.unsqueeze(1)
+        pred_quant = pred_quant.unsqueeze(2)
+        u = target_quant - pred_quant # (B, n_quant, n_quant)
 
-        l_k = self.huber_loss(u)
-        mask = (u < 0)
-        q_huber_loss = (mask * l_k * (1 - quant_target)) + (~mask * l_k * quant_target)
+        weight = torch.abs(u.le(0.).float() - quant_target.view(1, -1, 1)) # (B, n_quant, n_quant)
+        loss = weight * F.smooth_l1_loss(pred_quant, target_quant, reduction='none') # (B, n_quant, n_quant)
+        loss = torch.mean(weight * loss)
 
-        return torch.mean(torch.sum(q_huber_loss, dim=-1))
-
-    def huber_loss(self, u):
-        """
-        Args:
-            u shape: (B, n_quant, n_quant)
-        """
-        mask = (abs(u) <= self.kappa)
-        return (mask * (u ** 2) / 2) + (~mask * self.kappa * (abs(u) - self.kappa / 2))
+        return loss

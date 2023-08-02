@@ -33,7 +33,7 @@ class C51(ValueIterationAlgorithm):
             algo_config.v_min,
             algo_config.v_max,
             algo_config.n_atom,
-            dtype=torch.float
+            dtype=torch.float32
         ).to(self.device)
         self.v_min = algo_config.v_min
         self.v_max = algo_config.v_max

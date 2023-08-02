@@ -30,7 +30,7 @@ class QRDQN(ValueIterationAlgorithm):
         self.buffer_cnt = 0
 
         self.n_quant = algo_config.n_atom
-        quants = np.linspace(0.0, 1.0, self.n_quant + 1)
+        quants = torch.linspace(0.0, 1.0, self.n_quant + 1, dtype=torch.float32).to(device)
         self.quants_target = (quants[:-1] + quants[1:]) / 2
 
     # Update online network with samples in the replay memory. 
@@ -40,44 +40,29 @@ class QRDQN(ValueIterationAlgorithm):
             lambda x: torch.from_numpy(x).to(self.device),
             self.memory.sample(self.batch_size)
         )) 
+        obses, rewards, next_obses = obses.float(), rewards.float(), next_obses.float()
         # obses, next_obses         : (B, state_len, 84, 84)
         # actions, rewards, dones   : (B, )
 
         # Get q-value from the target network
         with torch.no_grad():
-            # Calculate the estimated value distribution with target networks
-            next_q_dist = self.target_net(next_obses) # (B, n_act, n_quant)
-            #TODO Start from here
-            opt_acts = torch.sum(
-                next_q_dist * self.value_range.view(1, 1, -1), dim=-1
-            ).argmax(dim=-1).view(-1, 1, 1) # (B, 1, 1)
+            # Estimated quantiles with target networks
+            next_q_quants = self.target_net(next_obses) # (B, n_act, n_quant)
+            opt_acts = torch.mean(next_q_quants, dim=-1).argmax(dim=-1) # (B, )
+            est_quants = next_q_quants.gather(
+                1, opt_acts.expand(-1, 1, self.n_quant)
+            ).squeeze() # (B, n_quant)
+            y_quants = rewards.view(-1, 1) + self.gamma * est_quants * (~dones).view(-1, 1) # (B, n_quant)
 
-            est_q_dist = rewards.view(-1, 1) + self.gamma * self.target_net(
-                next_obses
-            ).gather(1, opt_acts.expand(-1, 1, self.n_atom)).squeeze() # (B, n_atom)
-
-            # Calculate the y-distribution with estimated value distribution
-            next_v_range = rewards.view(-1, 1) + \
-                self.gamma * self.value_range.view(1, -1) * (~dones).view(-1, 1)
-            next_v_range = torch.clamp(next_v_range, self.v_min, self.v_max) # (B, n_atom)
-            next_v_pos = (next_v_range - self.v_min) / self.v_step # (B, n_atom)
-
-            lb = torch.floor(next_v_pos).long() # (B, n_atom)
-            ub = torch.ceil(next_v_pos).long() # (B, n_atom)
-            
-            y_dist = torch.zeros_like(est_q_dist) # (B, n_atom)
-            y_dist.scatter_add_(1, lb, est_q_dist * (ub - next_v_pos)) # (B, n_atom)
-            y_dist.scatter_add_(1, ub, est_q_dist * (next_v_pos - lb)) # (B, n_atom)
-            
-        # Calculate the predicted value distribution with pred. networks
-        pred_dist = self.pred_net(obses).gather(
-            1, actions.view(-1, 1, 1).expand(-1, 1, self.n_atom)
-        ).squeeze() # (B, n_atom)
+        # Predicted quantiles with pred. networks
+        pred_quants = self.pred_net(obses).gather(
+            1, actions.view(-1, 1, 1).expand(-1, 1, self.n_quant)
+        ).squeeze() # (B, n_quant)
 
         # Forward pass & Backward pass
         self.pred_net.train()
         self.optimizer.zero_grad()
-        loss = self.criterion(pred_dist, y_dist)
+        loss = self.criterion(pred_quants, y_quants)
         loss.backward()
         self.optimizer.step()
 
@@ -104,8 +89,7 @@ class QRDQN(ValueIterationAlgorithm):
         if self.rng.random() >= eps:
             self.pred_net.eval()
             with torch.no_grad():
-                action_dist = self.pred_net(obses.to(self.device)) # (n_envs, n_actions, n_atom)
-                action_value = torch.sum(action_dist * self.value_range.view(1, 1, -1), dim=-1) # (n_envs, n_actions)
+                action_value = self.pred_net(obses.to(self.device)).mean(dim=-1) # (n_envs, n_actions)
                 action = torch.argmax(action_value, dim=-1).cpu().numpy() # (n_envs, )
         else:
             action = self.rng.choice(self.n_act, size=(self.n_envs, ))
