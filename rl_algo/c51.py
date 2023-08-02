@@ -32,7 +32,8 @@ class C51(ValueIterationAlgorithm):
         self.value_range = torch.linspace(
             algo_config.v_min,
             algo_config.v_max,
-            algo_config.n_atom
+            algo_config.n_atom,
+            dtype=torch.float
         ).to(self.device)
         self.v_min = algo_config.v_min
         self.v_max = algo_config.v_max
@@ -45,7 +46,8 @@ class C51(ValueIterationAlgorithm):
         obses, actions, rewards, next_obses, dones = tuple(map(
             lambda x: torch.from_numpy(x).to(self.device),
             self.memory.sample(self.batch_size)
-        )) 
+        ))
+        obses, rewards, next_obses = obses.float(), rewards.float(), next_obses.float()
         # obses, next_obses         : (B, state_len, 84, 84)
         # actions, rewards, dones   : (B, )
 
