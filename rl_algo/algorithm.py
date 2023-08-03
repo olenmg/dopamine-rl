@@ -42,12 +42,13 @@ class RLAlgorithm(object):
         self.optim_cls, self.optim_kwargs = train_config.optim_cls, train_config.optim_kwargs
 
         # For logging & Save
-        self.save_path = os.path.join("results", train_config.run_name)
-        os.makedirs(self.save_path, exist_ok=True)
-        with open(os.path.join(self.save_path, "train_cfg.json"), "w") as f:
-            f.write(json.dumps(train_config.__dict__, indent=4))
-        with open(os.path.join(self.save_path, "algo_cfg.json"), "w") as f:
-            f.write(json.dumps(algo_config.__dict__, indent=4))
+        if not render:
+            self.save_path = os.path.join("results", train_config.run_name)
+            os.makedirs(self.save_path, exist_ok=True)
+            with open(os.path.join(self.save_path, "train_cfg.json"), "w") as f:
+                f.write(json.dumps(train_config.__dict__, indent=4))
+            with open(os.path.join(self.save_path, "algo_cfg.json"), "w") as f:
+                f.write(json.dumps(algo_config.__dict__, indent=4))
 
         # Others
         self.rng = np.random.default_rng(train_config.random_seed)
@@ -199,5 +200,22 @@ class ValueIterationAlgorithm(RLAlgorithm):
         pred_net_fname: str = "pred_net.pt",
         target_net_fname: str = "target_net.pt"
     ) -> None:
-        self.pred_net.load_state_dict(torch.load(os.path.join(self.save_path, pred_net_fname)))
-        self.target_net.load_state_dict(torch.load(os.path.join(self.save_path, target_net_fname)))
+        if pred_net_fname == "pred_net.pt" and target_net_fname == "target_net.pt":
+            self.pred_net.load_state_dict(torch.load(
+                os.path.join(self.save_path, pred_net_fname),
+                map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            ))
+            self.target_net.load_state_dict(torch.load(
+                os.path.join(self.save_path, target_net_fname),
+                map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            ))
+        else:
+            self.pred_net.load_state_dict(torch.load(
+                pred_net_fname,
+                map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            ))
+            self.target_net.load_state_dict(torch.load(
+                target_net_fname,
+                map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            ))
+            
