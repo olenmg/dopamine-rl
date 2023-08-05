@@ -34,16 +34,18 @@ class QuantileHuberLoss(nn.Module):
         Return:
             out, tensor(int)
         """
-        target_quant = y.unsqueeze(1)
-        pred_quant = pred.unsqueeze(2)
+        target_quant = y.unsqueeze(-2)
+        pred_quant = pred.unsqueeze(-1)
         u = target_quant - pred_quant # (B, n_quant, n_quant)
 
         weight = torch.abs(u.le(0.).float() - quants_range.view(1, -1, 1)) # (B, n_quant, n_quant)
-        loss = weight * F.huber_loss(
+        loss = F.huber_loss(
             pred_quant, target_quant,
             reduction='none',
             delta=self.kappa
         ) # (B, n_quant, n_quant)
-        loss = torch.sum(weight * loss, dim=2).mean()
+        loss = torch.mean(weight * loss, dim=-2).mean()
+        #TODO/Not sure. original paper suggested to do sum first, and then get mean.
+        # Directly appling mean can reduce the magnitude of the mean, resulting in more stable training I guess
 
         return loss
