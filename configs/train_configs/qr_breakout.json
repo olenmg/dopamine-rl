@@ -1,0 +1,20 @@
+{
+    "run_name": "QR-DQN-Breakout-Default",
+    "env_id": "ALE/Breakout-v5",
+    "n_envs": 4,
+    "state_len": 4,
+    "frame_skip": 1,
+    "random_seed": 42,
+    "loss_cls": "QuantileHuberLoss",
+    "loss_kwargs": {},
+    "optim_cls": "Adam",
+    "optim_kwargs": {
+        "lr": 0.0001
+    },
+    "batch_size": 32,
+    "train_step": 200000000,
+    "save_freq": 100000,
+    "logging_freq": 50000,
+    "device": "auto",
+    "verbose": true
+}
