@@ -46,4 +46,5 @@ if __name__ == "__main__":
         save_path=os.path.join("results", train_config.run_name, f"{train_config.run_name}.png"),
         alpha=0.9
     )
+    args.log_path = ""
     render(args)

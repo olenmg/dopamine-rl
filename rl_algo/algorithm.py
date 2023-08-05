@@ -42,8 +42,8 @@ class RLAlgorithm(object):
         self.optim_cls, self.optim_kwargs = train_config.optim_cls, train_config.optim_kwargs
 
         # For logging & Save
+        self.save_path = os.path.join("results", train_config.run_name)
         if not render:
-            self.save_path = os.path.join("results", train_config.run_name)
             os.makedirs(self.save_path, exist_ok=True)
             with open(os.path.join(self.save_path, "train_cfg.json"), "w") as f:
                 f.write(json.dumps(train_config.__dict__, indent=4))

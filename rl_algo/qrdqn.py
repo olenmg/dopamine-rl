@@ -31,7 +31,7 @@ class QRDQN(ValueIterationAlgorithm):
 
         self.n_quant = algo_config.n_atom
         quants = torch.linspace(0.0, 1.0, self.n_quant + 1, dtype=torch.float32).to(self.device)
-        self.quants_target = (quants[:-1] + quants[1:]) / 2
+        self.quants_range = (quants[:-1] + quants[1:]) / 2
 
     # Update online network with samples in the replay memory. 
     def update_network(self) -> None:
@@ -63,7 +63,7 @@ class QRDQN(ValueIterationAlgorithm):
 
         # Forward pass & Backward pass
         self.optimizer.zero_grad()
-        loss = self.criterion(pred_quants, y_quants)
+        loss = self.criterion(pred_quants, y_quants, self.quants_range)
         loss.backward()
         self.optimizer.step()
 

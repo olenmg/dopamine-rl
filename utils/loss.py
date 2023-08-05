@@ -24,7 +24,7 @@ class QuantileHuberLoss(nn.Module):
         super().__init__()
         self.kappa = kappa
 
-    def forward(self, pred, y, quant_target):
+    def forward(self, pred, y, quants_range):
         """
         Args:
             pred: predicted quantiles
@@ -34,12 +34,16 @@ class QuantileHuberLoss(nn.Module):
         Return:
             out, tensor(int)
         """
-        target_quant = target_quant.unsqueeze(1)
-        pred_quant = pred_quant.unsqueeze(2)
+        target_quant = y.unsqueeze(1)
+        pred_quant = pred.unsqueeze(2)
         u = target_quant - pred_quant # (B, n_quant, n_quant)
 
-        weight = torch.abs(u.le(0.).float() - quant_target.view(1, -1, 1)) # (B, n_quant, n_quant)
-        loss = weight * F.smooth_l1_loss(pred_quant, target_quant, reduction='none') # (B, n_quant, n_quant)
-        loss = torch.mean(weight * loss)
+        weight = torch.abs(u.le(0.).float() - quants_range.view(1, -1, 1)) # (B, n_quant, n_quant)
+        loss = weight * F.huber_loss(
+            pred_quant, target_quant,
+            reduction='none',
+            delta=self.kappa
+        ) # (B, n_quant, n_quant)
+        loss = torch.sum(weight * loss, dim=2).mean()
 
         return loss
