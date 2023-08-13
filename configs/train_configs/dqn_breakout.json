@@ -5,6 +5,7 @@
     "state_len": 4,
     "frame_skip": 1,
     "random_seed": 42,
+    "algo": "DQN",
     "loss_cls": "SmoothL1Loss",
     "loss_kwargs": {},
     "optim_cls": "Adam",

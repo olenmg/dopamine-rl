@@ -2,20 +2,21 @@
     "policy_kwargs": {
         "policy_type": "MlpPolicy",
         "hidden_sizes": [
-            128
+            256,
+            256
         ]
     },
     "eps_cls": "LinearDecayES",
     "eps_kwargs": {
         "init_eps": 1.0,
-        "milestones": [1000, 5000],
-        "target_eps": [0.1, 0.01]
+        "milestones": 10000,
+        "target_eps": 0.01
     },
     "discount_rate": 0.99,
-    "soft_update_rate": 1.0,
-    "buffer_size": 10000,
+    "soft_update_rate": 0.01,
     "learning_starts": 1000,
+    "buffer_size": 100000,
     "train_freq": 1,
-    "target_update_freq": 20,
-    "n_atom": 50
+    "target_update_freq": 1,
+    "n_atom": 32
 }

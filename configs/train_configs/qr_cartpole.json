@@ -5,16 +5,17 @@
     "state_len": 1,
     "frame_skip": 1,
     "random_seed": 42,
+    "algo": "QRDQN",
     "loss_cls": "QuantileHuberLoss",
     "loss_kwargs": {},
     "optim_cls": "Adam",
     "optim_kwargs": {
         "lr": 1e-3
     },
-    "batch_size": 128,
-    "train_step": 100000,
+    "batch_size": 32,
+    "train_step": 50000,
     "save_freq": 10000,
-    "logging_freq": 10000,
+    "logging_freq": 2000,
     "device": "auto",
     "verbose": true
 }

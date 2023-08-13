@@ -5,6 +5,7 @@
     "state_len": 1,
     "frame_skip": 1,
     "random_seed": 42,
+    "algo": "C51",
     "loss_cls": "SoftCrossEntropyLoss",
     "loss_kwargs": {},
     "optim_cls": "Adam",
