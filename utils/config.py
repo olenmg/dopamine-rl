@@ -4,7 +4,8 @@ import torch
 class TrainConfig:
     def __init__(
         self,
-        run_name: str = None,
+        run_name: str,
+        algo: str,
         env_id: str = "CartPole-v1",
         n_envs: int = 4,
         state_len: int = 1,
@@ -30,6 +31,7 @@ class TrainConfig:
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.run_name = run_name
+        self.algo = algo
         self.env_id = env_id
         self.n_envs = n_envs
         self.state_len = state_len # Sequential images to define state

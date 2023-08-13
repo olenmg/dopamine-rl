@@ -1,11 +1,11 @@
 {
     "run_name": "DQN-Breakout-Default",
+    "algo": "DQN",
     "env_id": "ALE/Breakout-v5",
     "n_envs": 4,
     "state_len": 4,
     "frame_skip": 1,
     "random_seed": 42,
-    "algo": "DQN",
     "loss_cls": "SmoothL1Loss",
     "loss_kwargs": {},
     "optim_cls": "Adam",

@@ -1,11 +1,11 @@
 {
     "run_name": "C51-CartPole-Default",
+    "algo": "C51",
     "env_id": "CartPole-v1",
     "n_envs": 1,
     "state_len": 1,
     "frame_skip": 1,
     "random_seed": 42,
-    "algo": "C51",
     "loss_cls": "SoftCrossEntropyLoss",
     "loss_kwargs": {},
     "optim_cls": "Adam",
