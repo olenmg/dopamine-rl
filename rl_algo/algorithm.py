@@ -82,6 +82,7 @@ class ValueIterationAlgorithm(RLAlgorithm):
 
         # Policy networks
         self.pred_net = get_policy_networks(
+            algo=train_config.algo,
             env=self.env,
             state_len=self.state_len,
             n_atom=getattr(algo_config, "n_atom", -1),
