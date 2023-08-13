@@ -29,9 +29,9 @@ if __name__ == "__main__":
     with open(os.path.join("configs/train_configs", args.train_cfg), "r") as f:
         train_config = TrainConfig(**json.load(f))
     with open(os.path.join("configs/algo_configs", args.algo_cfg), "r") as f:
-        algo_config = ALGO_CONFIG[args.algo_cfg.algo](**json.load(f))
+        algo_config = ALGO_CONFIG[train_config.algo](**json.load(f))
 
-    model = ALGO[args.algo_cfg.algo](
+    model = ALGO[train_config.algo](
         train_config=train_config,
         algo_config=algo_config
     )

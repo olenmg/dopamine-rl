@@ -56,9 +56,9 @@ def render(args):
         with open(os.path.join(dir_path, "train_cfg.json"), "r") as f:
             train_config = TrainConfig(**json.load(f))
         with open(os.path.join(dir_path, "algo_cfg.json"), "r") as f:
-            algo_config = ALGO_CONFIG[args.algo](**json.load(f))
+            algo_config = ALGO_CONFIG[train_config.algo](**json.load(f))
         train_config.n_envs = 1
-        model = ALGO[args.algo](
+        model = ALGO[train_config.algo](
             train_config=train_config,
             algo_config=algo_config,
             render=True
@@ -71,9 +71,9 @@ def render(args):
         with open(os.path.join("configs/train_configs", args.train_cfg), "r") as f:
             train_config = TrainConfig(**json.load(f))
         with open(os.path.join("configs/algo_configs", args.algo_cfg), "r") as f:
-            algo_config = ALGO_CONFIG[args.algo](**json.load(f))
+            algo_config = ALGO_CONFIG[train_config.algo](**json.load(f))
         train_config.n_envs = 1
-        model = ALGO[args.algo](
+        model = ALGO[train_config.algo](
             train_config=train_config,
             algo_config=algo_config,
             render=True
@@ -99,10 +99,6 @@ def render(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Arguments for rendering")
-    parser.add_argument(
-        '--algo', type=str,
-        help="Algorithm", choices=['DQN', 'C51', 'QR']
-    )
     parser.add_argument(
         '--log-path', type=str, default=""
     )
