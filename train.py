@@ -17,10 +17,6 @@ ALGO = {
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Arguments for training")
     parser.add_argument(
-        '--algo', type=str,
-        help="Algorithm", choices=['DQN', 'C51', 'QRDQN']
-    )
-    parser.add_argument(
         '--train-cfg', type=str,
         help="Path of train config"
     )
@@ -33,9 +29,9 @@ if __name__ == "__main__":
     with open(os.path.join("configs/train_configs", args.train_cfg), "r") as f:
         train_config = TrainConfig(**json.load(f))
     with open(os.path.join("configs/algo_configs", args.algo_cfg), "r") as f:
-        algo_config = ALGO_CONFIG[args.algo](**json.load(f))
+        algo_config = ALGO_CONFIG[args.algo_cfg.algo](**json.load(f))
 
-    model = ALGO[args.algo](
+    model = ALGO[args.algo_cfg.algo](
         train_config=train_config,
         algo_config=algo_config
     )

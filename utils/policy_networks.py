@@ -29,6 +29,7 @@ class PolicyNetwork(nn.Module):
 class MlpPolicy(PolicyNetwork):
     def __init__(
         self,
+        algo: str,
         n_actions: int,
         input_size: int,
         hidden_sizes: List[int] = [64, ],
@@ -39,7 +40,8 @@ class MlpPolicy(PolicyNetwork):
             n_atom: If given, network will be built for C51 algorithm
         """
 
-        super().__init__()        
+        super().__init__()
+        self.algo = algo
         self.in_layer = nn.Linear(input_size * state_len, hidden_sizes[0])
         self.linears = nn.ModuleList(
             [
@@ -53,24 +55,31 @@ class MlpPolicy(PolicyNetwork):
 
         self.n_actions = n_actions
         self.n_atom = n_atom
+        self.state_len = state_len
 
         self._init_weight()
     
     def forward(self, x):
+        if self.state_len != 1:
+            x = x.flatten(-2)
         x = F.relu(self.in_layer(x))
         for layer in self.linears:
             x = F.relu(layer(x))
 
-        if self.n_atom == -1:
+        if self.algo == "DQN":
             action_value = self.fc_q(x)
-        else:
+        elif self.algo == "C51":
             action_value = F.softmax(self.fc_q(x).view(-1, self.n_actions, self.n_atom), dim=-1)
+        elif self.algo == "QRDQN":
+            action_value = self.fc_q(x).view(-1, self.n_actions, self.n_atom)
+
         return action_value
 
 
 class CnnPolicy(PolicyNetwork):
     def __init__(
         self,
+        algo: str,
         n_actions: int,
         state_len: int = 1,
         n_atom: int = -1
@@ -80,9 +89,10 @@ class CnnPolicy(PolicyNetwork):
         """
 
         super().__init__()
+        self.algo = algo
+
         # Expected input tensor shape: (B, state_len, 84, 84)
         # Input (B, 210, 160, 3) will be processed by `ProcessFrame84` wrapper -> (B, 84, 84, state_len)
-
         self.conv = nn.Sequential(
             nn.Conv2d(state_len, 32, kernel_size=8, stride=4),
             nn.ReLU(),
@@ -93,7 +103,7 @@ class CnnPolicy(PolicyNetwork):
         )
         self.fc = nn.Linear(7 * 7 * 64, 512)
 
-        if n_atom == -1:
+        if self.algo == "DQN":
             self.fc_q = nn.Linear(512, n_actions)
         else:
             self.fc_q = nn.Linear(512, n_actions * n_atom)
@@ -111,15 +121,18 @@ class CnnPolicy(PolicyNetwork):
         x = x.flatten(start_dim=1)
         x = F.relu(self.fc(x))
         
-        if self.n_atom == -1:
+        if self.algo == "DQN":
             action_value = self.fc_q(x)
-        else:
+        elif self.algo == "C51":
             action_value = F.softmax(self.fc_q(x).view(-1, self.n_actions, self.n_atom), dim=-1)
+        elif self.algo == "QRDQN":
+            action_value = self.fc_q(x).view(-1, self.n_actions, self.n_atom)
 
         return action_value
 
 
 def get_policy_networks(
+    algo: str,
     policy_type: str,
     env: gym.Env,
     state_len: int,
@@ -131,6 +144,7 @@ def get_policy_networks(
     if policy_type == "MlpPolicy":
         obs_space = env.observation_space.shape[-1]
         return MlpPolicy(
+            algo=algo,
             n_actions=n_actions,
             input_size=obs_space,
             hidden_sizes=hidden_sizes,
@@ -139,6 +153,7 @@ def get_policy_networks(
         )
     elif policy_type == "CnnPolicy":
         return CnnPolicy(
+            algo=algo,
             n_actions=n_actions,
             state_len=state_len,
             n_atom=n_atom

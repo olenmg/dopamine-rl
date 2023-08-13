@@ -44,7 +44,8 @@ class QuantileHuberLoss(nn.Module):
             reduction='none',
             delta=self.kappa
         ) # (B, n_quant, n_quant)
-        loss = torch.mean(weight * loss, dim=-2).mean()
+        loss = torch.sum(weight * loss, dim=1).mean(dim=-1)
+        loss = loss.mean()
         #TODO/Not sure. original paper suggested to do sum first, and then get mean.
         # Directly appling mean can reduce the magnitude of the mean, resulting in more stable training I guess
 
