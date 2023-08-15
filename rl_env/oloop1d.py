@@ -15,6 +15,7 @@ class OpenLoop1DTrack(gym.Env):
 
     def __init__(self, water_spout, video_path, visual_noise=False):
         super().__init__()
+        print("[Mouse VR] Ready for the OpenLoop 1D Track")
         self.action_space = spaces.Discrete(2)
         self.observation_space = spaces.Box(
             low=0, high=255, shape=(160, 210, 3), dtype=np.uint8
@@ -24,11 +25,11 @@ class OpenLoop1DTrack(gym.Env):
         self.video_path = video_path
         self.visual_noise = visual_noise #TODO
 
-        self.data = self._load_data()
+        self.screen = self._load_screen()
         self.cur_time = randrange(50) # Remove time-bias
         self.start_time = self.cur_time
-        self.end_time = self.data.shape[0] - randrange(1, 10) # Black screen
-        self.state = self.data[self.cur_time, :, :, :]
+        self.end_time = self.screen.shape[0] - randrange(1, 10) # Black screen
+        self.state = self.screen[self.cur_time]
         self.licking_cnt = 0
 
         # For rendering
@@ -45,7 +46,7 @@ class OpenLoop1DTrack(gym.Env):
         self.cur_time += 1
 
         # Next state
-        next_state = self.data[self.cur_time, :, :, :]
+        next_state = self.screen[self.cur_time]
         # if self.visual_noise: #TODO
         self.state = next_state
 
@@ -78,8 +79,8 @@ class OpenLoop1DTrack(gym.Env):
         # Reset the state of the environment to an initial state
         self.cur_time = randrange(50)
         self.start_time = self.cur_time
-        self.end_time = self.data.shape[0] - randrange(1, 10)
-        self.state = self.data[self.cur_time, :, :, :]
+        self.end_time = self.screen.shape[0] - randrange(1, 10)
+        self.state = self.screen[self.cur_time]
         self.licking_cnt = 0
 
         self.bar_states = []
@@ -96,7 +97,7 @@ class OpenLoop1DTrack(gym.Env):
 
     def render(self, mode='human', close=False):
         # Render the environment to the screen
-        rgb_array = self.original_frames[self.cur_time, :, :, :].copy()
+        rgb_array = self.original_frames[self.cur_time].copy()
         height, width, _ = rgb_array.shape
 
         pos_template = (width - 40) / (self.end_time - self.start_time)
@@ -133,6 +134,9 @@ class OpenLoop1DTrack(gym.Env):
         elif mode == 'rgb_array':
             return cv2.cvtColor(rgb_array, cv2.COLOR_BGR2RGB)
 
+    def cvt_screen_gray_scale(self):
+        self.screen = np.stack([cv2.cvtColor(f, cv2.COLOR_RGB2GRAY) for f in self.screen])
+
     def save_gif(self):
         imageio.mimsave('video.gif', self.frames, duration=0.005)
 
@@ -151,6 +155,7 @@ class OpenLoop1DTrack(gym.Env):
         self.lick_timing_eps.append(self.cur_time)
 
     def _get_original_video_frames(self):
+        print("Loading VR frames...")
         capture = cv2.VideoCapture(self.video_path)
 
         frames = []
@@ -176,7 +181,7 @@ class OpenLoop1DTrack(gym.Env):
         return mice_pic
 
     @staticmethod
-    def _load_data():
+    def _load_screen():
         raise NotImplementedError
 
 
@@ -193,10 +198,10 @@ class OpenLoopStandard1DTrack(OpenLoop1DTrack):
         )
 
     @staticmethod
-    def _load_data():
+    def _load_screen():
         with open(f"rl_env/track/oloop_standard_1d.pkl", "rb") as f:
-            data = pickle.load(f)
-        return data
+            screen = pickle.load(f)
+        return screen
 
 
 class OpenLoopTeleportLong1DTrack(OpenLoop1DTrack):
@@ -212,7 +217,7 @@ class OpenLoopTeleportLong1DTrack(OpenLoop1DTrack):
         )
 
     @staticmethod
-    def _load_data():
+    def _load_screen():
         with open("rl_env/track/oloop_teleport_long_1d.pkl", "rb") as f:
-            data = pickle.load(f)
-        return data
+            screen = pickle.load(f)
+        return screen

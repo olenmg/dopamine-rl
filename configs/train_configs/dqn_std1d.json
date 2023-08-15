@@ -1,0 +1,21 @@
+{
+    "run_name": "DQN-OloopStd1D-Default",
+    "algo": "DQN",
+    "env_id": "OLoopStandard1D",
+    "n_envs": 4,
+    "state_len": 4,
+    "frame_skip": 1,
+    "random_seed": 42,
+    "loss_cls": "SmoothL1Loss",
+    "loss_kwargs": {},
+    "optim_cls": "Adam",
+    "optim_kwargs": {
+        "lr": 0.0011
+    },
+    "batch_size": 32,
+    "train_step": 100000,
+    "save_freq": 10000,
+    "logging_freq": 10000,
+    "device": "auto",
+    "verbose": true
+}

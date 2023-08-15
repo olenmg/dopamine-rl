@@ -28,17 +28,146 @@ import os
 import time
 from typing import Any, Dict, List, Optional, SupportsFloat, Tuple, Union
 
+import cv2
+import numpy as np
 import gymnasium as gym
 from gymnasium import spec
+from gymnasium.spaces import Box
 from gymnasium.core import ActType, ObsType
-from gymnasium.wrappers import (
-    AtariPreprocessing,
-    FrameStack,
-    ResizeObservation,
-    GrayScaleObservation
-)
+from gymnasium.wrappers import AtariPreprocessing, FrameStack
 
 from rl_env import CUSTOM_ENVS
+
+
+class MouseVRPreprocessing(gym.Wrapper, gym.utils.RecordConstructorArgs):
+    """ Mouse VR preprocessing wrapper.
+
+    This class refers to gymnasium.wrappers.atari_preprocessing.py
+
+    Specifically, the following preprocess stages applies to the mouse VR environment:
+
+    - Noop Reset: Obtains the initial state by taking a random number of no-ops on reset, default max 30 no-ops.
+    - Frame skipping: The number of frames skipped between steps, 4 by default
+    - Resize to a square image: Resizes the atari environment original observation shape from 210x180 to 84x84 by default
+    - Grayscale observation: If the observation is colour or greyscale, by default, greyscale.
+    - Scale observation: If to scale the observation between [0, 1) or [0, 255), by default, not scaled.
+    """
+
+    def __init__(
+        self,
+        env: gym.Env,
+        noop_max: int = 30,
+        frame_skip: int = 4,
+        screen_size: int = 84,
+        grayscale_obs: bool = True,
+        scale_obs: bool = False,
+    ):
+        """Wrapper for Atari 2600 preprocessing.
+
+        Args:
+            env (Env): The environment to apply the preprocessing
+            noop_max (int): For No-op reset, the max number no-ops actions are taken at reset, to turn off, set to 0.
+            frame_skip (int): The number of frames between new observation the agents observations effecting the frequency at which the agent experiences the game.
+            screen_size (int): resize Atari frame
+            grayscale_obs (bool): if True, then gray scale observation is returned, otherwise, RGB observation
+                is returned.
+            scale_obs (bool): if True, then observation normalized in range [0,1) is returned. It also limits memory
+                optimization benefits of FrameStack Wrapper.
+
+        Raises:
+            DependencyNotInstalled: opencv-python package not installed
+            ValueError: Disable frame-skipping in the original env
+        """
+        gym.utils.RecordConstructorArgs.__init__(
+            self,
+            noop_max=noop_max,
+            frame_skip=frame_skip,
+            screen_size=screen_size,
+            grayscale_obs=grayscale_obs,
+            scale_obs=scale_obs,
+        )
+        gym.Wrapper.__init__(self, env)
+
+        if cv2 is None:
+            raise gym.error.DependencyNotInstalled(
+                "opencv-python package not installed, run `pip install gymnasium[other]` to get dependencies for atari"
+            )
+        assert frame_skip > 0
+        assert screen_size > 0
+        assert noop_max >= 0
+        if frame_skip > 1:
+            if (
+                env.spec is not None
+                and "NoFrameskip" not in env.spec.id
+                and getattr(env.unwrapped, "_frameskip", None) != 1
+            ):
+                raise ValueError(
+                    "Disable frame-skipping in the original env. Otherwise, more than one "
+                    "frame-skip will happen as through this wrapper"
+                )
+        self.noop_max = noop_max
+        self.frame_skip = frame_skip
+        self.screen_size = screen_size
+        self.grayscale_obs = grayscale_obs
+        self.scale_obs = scale_obs
+
+        assert isinstance(env.observation_space, Box)
+        _low, _high, _obs_dtype = (
+            (0, 255, np.uint8) if not scale_obs else (0, 1, np.float32)
+        )
+        _shape = (screen_size, screen_size, 1 if grayscale_obs else 3)
+        if grayscale_obs:
+            _shape = _shape[:-1]  # Remove channel axis     
+        self.observation_space = Box(
+            low=_low, high=_high, shape=_shape, dtype=_obs_dtype
+        )
+
+        if grayscale_obs:
+            env.cvt_screen_gray_scale()
+
+    def step(self, action):
+        """Applies the preprocessing for an :meth:`env.step`."""
+        obs, total_reward, terminated, truncated, info = None, 0.0, False, False, {}
+
+        for _ in range(self.frame_skip):
+            obs, reward, terminated, truncated, info = self.env.step(action)
+            total_reward += reward
+            if terminated or truncated:
+                break
+
+        obs = cv2.resize(
+            obs,
+            (self.screen_size, self.screen_size),
+            interpolation=cv2.INTER_AREA,
+        )
+
+        return obs, total_reward, terminated, truncated, info
+
+    def reset(self, **kwargs):
+        """Resets the environment using preprocessing."""
+        # NoopReset
+        obs = None
+        _, reset_info = self.env.reset(**kwargs)
+
+        noops = (
+            self.env.unwrapped.np_random.integers(1, self.noop_max + 1)
+            if self.noop_max > 0
+            else 0
+        )
+
+        for _ in range(noops):
+            obs, _, terminated, truncated, step_info = self.env.step(0)
+            reset_info.update(step_info)
+            if terminated or truncated:
+                _, reset_info = self.env.reset(**kwargs)
+
+        obs = cv2.resize(
+            obs,
+            (self.screen_size, self.screen_size),
+            interpolation=cv2.INTER_AREA,
+        )
+
+        return obs, reset_info
 
 
 class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
@@ -241,23 +370,28 @@ class ResultsWriter:
 def get_env(train_config, render=False, **kwargs) -> gym.Env:
     # Wrapping
     def wrap_(i):
-        try:
-            if train_config.frame_skip == 1 and ("ALE" not in train_config.env_id):
-                env = gym.make(train_config.env_id, **kwargs)
-            else:
-                env = gym.make(train_config.env_id, **kwargs, frameskip=train_config.frame_skip)
-        except:
-            env = CUSTOM_ENVS[train_config.env_id](**kwargs)
-            env = GrayScaleObservation(env)
-            env = ResizeObservation(env, (84, 84))
-
-        if not render:
-            env = Monitor(env, os.path.join("results", train_config.run_name, f"{i}.monitor.csv"))
-
-        if "ALE" in train_config.env_id:
+        log_path = os.path.join("results", train_config.run_name, f"{i}.monitor.csv")
+        # Make the environmemnt
+        if "ALE" in train_config.env_id: # Atari games
+            env = gym.make(train_config.env_id, **kwargs, frameskip=train_config.frame_skip)
+            if not render:
+                env = Monitor(env, log_path)
             env = AtariPreprocessing(env)
+        elif train_config.env_id in CUSTOM_ENVS: # Custom envs
+            env = CUSTOM_ENVS[train_config.env_id](**kwargs)
+            if not render:
+                env = Monitor(env, log_path)
+            env = MouseVRPreprocessing(env)
+        else: # Other envs
+            if train_config.frame_skip == 1:
+                kwargs["frameskip"] = train_config.frame_skip
+            env = gym.make(train_config.env_id, **kwargs)
+            if not render:
+                env = Monitor(env, log_path)
+
         if train_config.state_len > 1:
             env = FrameStack(env, num_stack=train_config.state_len)
+
         return env
     env = gym.vector.AsyncVectorEnv([lambda x=i: wrap_(x) for i in range(train_config.n_envs)])
     return env 
