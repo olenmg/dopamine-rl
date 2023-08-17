@@ -1,5 +1,5 @@
 {
-    "run_name": "QR-DQN-Breakout-Default",
+    "run_name": "QRDQN-Breakout-Default",
     "algo": "QRDQN",
     "env_id": "ALE/Breakout-v5",
     "n_envs": 4,

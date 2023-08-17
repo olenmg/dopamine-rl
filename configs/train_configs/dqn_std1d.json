@@ -2,7 +2,7 @@
     "run_name": "DQN-OloopStd1D-Default",
     "algo": "DQN",
     "env_id": "OLoopStandard1D",
-    "n_envs": 4,
+    "n_envs": 1,
     "state_len": 4,
     "frame_skip": 1,
     "random_seed": 42,

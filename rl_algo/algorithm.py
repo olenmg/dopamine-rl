@@ -24,7 +24,7 @@ class RLAlgorithm(object):
     ):
         # Train configurations
         self.run_name = train_config.run_name
-        self.env = get_env(train_config, render=render)
+        self.env = get_env(train_config, render=render, render_mode="rgb_array")
         self.n_act = self.env.unwrapped.action_space[0].n
 
         self.n_envs = train_config.n_envs
