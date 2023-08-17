@@ -43,4 +43,5 @@ if __name__ == "__main__":
         alpha=0.9
     )
     args.log_path = ""
+    args.use_best = True
     render(args)

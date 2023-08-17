@@ -383,7 +383,7 @@ def get_env(train_config, render=False, **kwargs) -> gym.Env:
                 env = Monitor(env, log_path)
             env = MouseVRPreprocessing(env)
         else: # Other envs
-            if train_config.frame_skip == 1:
+            if train_config.frame_skip != 1:
                 kwargs["frameskip"] = train_config.frame_skip
             env = gym.make(train_config.env_id, **kwargs)
             if not render:
