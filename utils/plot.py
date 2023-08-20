@@ -10,13 +10,12 @@ def plot_with_exponential_averaging(x, y, label, alpha):
     
     plt.plot(x, y, color=p[0].get_color(), alpha=0.2)
 
-
-def plot_train_result(result, label="", alpha=0.95, save_path="./"):
+def plot_train_result(result, label="", alpha=0.95, save_path="./", threshold=None):
     rewards = [r['r'] for r in result]
     lengths = [r['l'] for r in result]
 
     plot_with_exponential_averaging(np.cumsum(lengths), rewards, label, alpha)
-    plt.axhline(y=int(max(rewards)*1.1), color='grey', linestyle='-')  # 500 is the maximum score!
+    plt.axhline(y=threshold if threshold else int(max(rewards)*1.1), color='grey', linestyle='-')
     plt.xlabel("Training Steps")
     plt.ylabel("Episode Reward")
 
