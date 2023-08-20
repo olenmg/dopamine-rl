@@ -50,7 +50,7 @@ class C51(ValueIterationAlgorithm):
             self.memory.sample(self.batch_size)
         ))
         obses, rewards, next_obses = obses.float(), rewards.float(), next_obses.float()
-        actions, rewards = actions.long(), torch.sign(rewards).float()
+        actions, rewards = actions.long(), torch.clamp(rewards, -1, 1).float()
 
         # obses, next_obses         : (B, state_len, 84, 84)
         # actions, rewards, dones   : (B, )
