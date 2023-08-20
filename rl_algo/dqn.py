@@ -39,7 +39,9 @@ class DQN(ValueIterationAlgorithm):
             self.memory.sample(self.batch_size)
         ))
         obses, rewards, next_obses = obses.float(), rewards.float(), next_obses.float()
-        actions, rewards = actions.long(), torch.clamp(rewards, -1, 1).float()
+        actions, rewards = actions.long(), rewards.float()
+        if self.reward_clipping:
+            rewards = torch.clamp(rewards, -1, 1)
 
         # Get q-value from the target network
         with torch.no_grad():

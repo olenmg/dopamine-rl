@@ -5,6 +5,7 @@
     "n_envs": 1,
     "state_len": 1,
     "frame_skip": 1,
+    "reward_clipping": false,
     "random_seed": 42,
     "loss_cls": "SoftCrossEntropyLoss",
     "loss_kwargs": {},

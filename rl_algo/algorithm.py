@@ -29,6 +29,7 @@ class RLAlgorithm(object):
 
         self.n_envs = train_config.n_envs
         self.state_len = train_config.state_len
+        self.reward_clipping = train_config.reward_clipping
 
         self.batch_size = train_config.batch_size
         self.train_steps = train_config.train_step

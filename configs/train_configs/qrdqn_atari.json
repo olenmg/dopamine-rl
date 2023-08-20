@@ -1,10 +1,11 @@
 {
-    "run_name": "QRDQN-Breakout-Default",
+    "run_name": "QRDQN-Atari-Default",
     "algo": "QRDQN",
     "env_id": "ALE/Breakout-v5",
-    "n_envs": 16,
+    "n_envs": 1,
     "state_len": 4,
     "frame_skip": 1,
+    "reward_clipping": true,
     "random_seed": 42,
     "loss_cls": "QuantileHuberLoss",
     "loss_kwargs": {},
@@ -13,9 +14,9 @@
         "lr": 5e-5
     },
     "batch_size": 32,
-    "train_step": 200000000,
-    "save_freq": 100000,
-    "logging_freq": 50000,
+    "train_step": 5e7,
+    "save_freq": 1000000,
+    "logging_freq": 100000,
     "device": "auto",
     "verbose": true
 }
