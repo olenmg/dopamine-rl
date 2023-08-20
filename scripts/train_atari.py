@@ -16,7 +16,6 @@ ALGO_CONFIG = {
 }
 
 ENVS = [
-    "ALE/Breakout-v5", "ALE/Kangaroo-v5",
     "ALE/VideoPinball-v5", "ALE/Boxing-v5", "ALE/Breakout-v5", "ALE/StarGunner-v5", 
     "ALE/Robotank-v5", "ALE/Atlantis-v5", "ALE/CrazyClimber-v5", "ALE/Gopher-v5",
     "ALE/DemonAttack-v5", "ALE/NameThisGame-v5", "ALE/Krull-v5", "ALE/Assault-v5",
