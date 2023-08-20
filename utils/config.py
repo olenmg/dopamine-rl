@@ -10,6 +10,7 @@ class TrainConfig:
         n_envs: int = 4,
         state_len: int = 1,
         frame_skip: int = 1,
+        reward_clipping: bool = False,
         random_seed: int = 42,
         loss_cls: str = "SmoothL1Loss",
         loss_kwargs: dict = {},
@@ -36,6 +37,7 @@ class TrainConfig:
         self.n_envs = n_envs
         self.state_len = state_len # Sequential images to define state
         self.frame_skip = frame_skip
+        self.reward_clipping = reward_clipping
         self.random_seed = random_seed
         self.loss_cls = loss_cls
         self.loss_kwargs = loss_kwargs
