@@ -37,7 +37,7 @@ if __name__ == "__main__":
     )
     result = model.train()
     plot_train_result(
-        result=[info["r"] for info in result],
+        result=result,
         label=train_config.run_name,
         save_path=os.path.join("results", train_config.run_name, f"{train_config.run_name}.png"),
         alpha=0.9
