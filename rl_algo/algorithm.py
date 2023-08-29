@@ -170,10 +170,10 @@ class ValueIterationAlgorithm(RLAlgorithm):
         terminated: np.ndarray, # bool, (n_envs, *)
         truncated: np.ndarray # bool, (n_envs, *)
     ) -> None:
-        self.buffer_cnt += 1
         done = np.any([terminated, truncated], axis=0)
         for i in range(self.n_envs):
             self.memory.add(obs[i], action[i], reward[i], next_obs[i], done[i])
+        self.buffer_cnt += self.n_envs
 
     # Update the target network's weights with the online network's one. 
     def update_target(self) -> None:
