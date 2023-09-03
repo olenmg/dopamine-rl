@@ -2,7 +2,7 @@
     "run_name": "C51-CartPole-Default",
     "algo": "C51",
     "env_id": "CartPole-v1",
-    "n_envs": 4,
+    "n_envs": 1,
     "state_len": 1,
     "frame_skip": 1,
     "reward_clipping": false,
