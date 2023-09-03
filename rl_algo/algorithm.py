@@ -25,7 +25,7 @@ class RLAlgorithm(object):
         # Train configurations
         self.run_name = train_config.run_name
         self.env = get_env(train_config, render=render, render_mode="rgb_array")
-        self.n_act = self.env.unwrapped.action_space[0].n
+        self.n_act = self.env.unwrapped.action_space.n if train_config.n_envs == 1 else self.env.unwrapped.action_space[0].n
 
         self.n_envs = train_config.n_envs
         self.state_len = train_config.state_len
@@ -84,9 +84,10 @@ class ValueIterationAlgorithm(RLAlgorithm):
         # Policy networks
         self.pred_net = get_policy_networks(
             algo=train_config.algo,
-            env=self.env,
             state_len=self.state_len,
-            n_atom=getattr(algo_config, "n_atom", -1),
+            n_act=self.n_act,
+            n_in=self.env.observation_space.shape[-1],
+            n_out=getattr(algo_config, "n_out", -1),
             **algo_config.policy_kwargs
         ).to(self.device)
         self.target_net = deepcopy(self.pred_net).to(self.device)
@@ -122,10 +123,16 @@ class ValueIterationAlgorithm(RLAlgorithm):
             self.add_to_buffer(obs, action, next_obs, reward, terminated, truncated)
 
             # Logging
-            for info in infos.get("final_info", []):
-                if info:
-                    episode_infos.append(info["episode"])
-                    episode_deque.append(info["episode"]["r"])
+            if self.n_envs == 1:
+                if terminated or truncated:
+                    episode_infos.append(infos["episode"])
+                    episode_deque.append(infos["episode"]["r"])
+                    next_obs, _ = self.env.reset()
+            else:
+                for info in infos.get("final_info", []):
+                    if info:
+                        episode_infos.append(info["episode"])
+                        episode_deque.append(info["episode"]["r"])
 
             # Learning if enough timestep has been gone 
             if (self.buffer_cnt >= self.learning_starts) \
@@ -156,7 +163,6 @@ class ValueIterationAlgorithm(RLAlgorithm):
                     if episode_deque and episode_deque[-1] > best_reward:
                         self.save_model("best_pred_net.pt", "best_target_net.pt")
                         best_reward = episode_deque[-1]
-
         self.env.close()
 
         return episode_infos
@@ -170,10 +176,15 @@ class ValueIterationAlgorithm(RLAlgorithm):
         terminated: np.ndarray, # bool, (n_envs, *)
         truncated: np.ndarray # bool, (n_envs, *)
     ) -> None:
-        done = np.any([terminated, truncated], axis=0)
-        for i in range(self.n_envs):
-            self.memory.add(obs[i], action[i], reward[i], next_obs[i], done[i])
-        self.buffer_cnt += self.n_envs
+        if self.n_envs == 1:
+            done = terminated or truncated
+            self.memory.add(obs, action, reward, next_obs, done)
+            self.buffer_cnt += 1
+        else:
+            done = np.any([terminated, truncated], axis=0)
+            for i in range(self.n_envs):
+                self.memory.add(obs[i], action[i], reward[i], next_obs[i], done[i])
+            self.buffer_cnt += self.n_envs
 
     # Update the target network's weights with the online network's one. 
     def update_target(self) -> None:

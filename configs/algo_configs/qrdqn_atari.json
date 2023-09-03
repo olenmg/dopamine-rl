@@ -14,5 +14,5 @@
     "learning_starts": 10000,
     "train_freq": 4,
     "target_update_freq": 10000,
-    "n_atom": 200
+    "n_out": 200
 }

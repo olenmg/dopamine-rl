@@ -11,10 +11,10 @@
     "discount_rate": 0.99,
     "soft_update_rate": 1.0,
     "buffer_size": 1000000,
-    "learning_starts": 10000,
+    "learning_starts": 4900,
     "train_freq": 4,
     "target_update_freq": 10000,
     "v_min": -10,
     "v_max": 10,
-    "n_atom": 51
+    "n_out": 51
 }

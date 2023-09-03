@@ -1,4 +1,4 @@
-from typing import List
+from typing import Union, List, Tuple
 
 import gymnasium as gym
 import numpy as np
@@ -34,10 +34,10 @@ class MlpPolicy(PolicyNetwork):
         input_size: int,
         hidden_sizes: List[int] = [64, ],
         state_len: int = 1,
-        n_atom: int = -1
+        n_out: int = -1
     ):
         """
-            n_atom: If given, network will be built for C51 algorithm
+            n_out: If given, network will be built for C51 algorithm
         """
 
         super().__init__()
@@ -48,13 +48,13 @@ class MlpPolicy(PolicyNetwork):
                 nn.Linear(in_shape, out_shape) for in_shape, out_shape in zip(hidden_sizes[:-1], hidden_sizes[1:])
             ]
         )
-        if n_atom == -1:
+        if n_out == -1:
             self.fc_q = nn.Linear(hidden_sizes[-1], n_actions)
         else:
-            self.fc_q = nn.Linear(hidden_sizes[-1], n_actions * n_atom)
+            self.fc_q = nn.Linear(hidden_sizes[-1], n_actions * n_out)
 
         self.n_actions = n_actions
-        self.n_atom = n_atom
+        self.n_out = n_out
         self.state_len = state_len
 
         self._init_weight()
@@ -69,11 +69,11 @@ class MlpPolicy(PolicyNetwork):
         if self.algo == "DQN":
             action_value = self.fc_q(x)
         elif self.algo == "C51":
-            action_value = F.softmax(self.fc_q(x).view(-1, self.n_actions, self.n_atom), dim=-1)
+            action_value = F.softmax(self.fc_q(x).view(-1, self.n_actions, self.n_out), dim=-1)
         elif self.algo == "QRDQN":
-            action_value = self.fc_q(x).view(-1, self.n_actions, self.n_atom)
+            action_value = self.fc_q(x).view(-1, self.n_actions, self.n_out)
 
-        return action_value
+        return action_value.squeeze()
 
 
 class CnnPolicy(PolicyNetwork):
@@ -82,10 +82,10 @@ class CnnPolicy(PolicyNetwork):
         algo: str,
         n_actions: int,
         state_len: int = 1,
-        n_atom: int = -1
+        n_out: int = -1
     ):
         """
-            n_atom: If given, network will be built for C51 algorithm
+            n_out: If given, network will be built for C51 algorithm
         """
 
         super().__init__()
@@ -106,17 +106,23 @@ class CnnPolicy(PolicyNetwork):
         if self.algo == "DQN":
             self.fc_q = nn.Linear(512, n_actions)
         else:
-            self.fc_q = nn.Linear(512, n_actions * n_atom)
+            self.fc_q = nn.Linear(512, n_actions * n_out)
 
         # action value distribution
         self.n_actions = n_actions
-        self.n_atom = n_atom
+        self.n_out = n_out
+        self.state_len = state_len
 
         self._init_weight()
 
     def forward(self, x):
-        if x.dim() == 3:
+        if x.dim() == 2: # When n_envs == 1 and state_len == 1
+            x = x.unsqueeze(0).unsqueeze(0)
+        elif x.dim() == 3 and self.state_len == 1: # When n_envs > 1
             x = x.unsqueeze(1)
+        elif x.dim() == 3 and self.state_len != 1: # When n_envs == 1
+            x = x.unsqueeze(0)
+
         x = self.conv(x / 255.0)
         x = x.flatten(start_dim=1)
         x = F.relu(self.fc(x))
@@ -124,39 +130,37 @@ class CnnPolicy(PolicyNetwork):
         if self.algo == "DQN":
             action_value = self.fc_q(x)
         elif self.algo == "C51":
-            action_value = F.softmax(self.fc_q(x).view(-1, self.n_actions, self.n_atom), dim=-1)
+            action_value = F.softmax(self.fc_q(x).view(-1, self.n_actions, self.n_out), dim=-1)
         elif self.algo == "QRDQN":
-            action_value = self.fc_q(x).view(-1, self.n_actions, self.n_atom)
+            action_value = self.fc_q(x).view(-1, self.n_actions, self.n_out)
 
-        return action_value
+        return action_value.squeeze()
 
 
 def get_policy_networks(
     algo: str,
     policy_type: str,
-    env: gym.Env,
     state_len: int,
-    n_atom: int = -1,
-    hidden_sizes: List[int] = [64, ]
+    n_act: int,
+    n_in: Union[int, Tuple[int, int], Tuple[int, int, int]],
+    n_out: int = -1,
+    hidden_sizes: List[int] = None
 ) -> PolicyNetwork:
-    n_actions = env.unwrapped.action_space[0].n
-
     if policy_type == "MlpPolicy":
-        obs_space = env.observation_space.shape[-1]
         return MlpPolicy(
             algo=algo,
-            n_actions=n_actions,
-            input_size=obs_space,
+            n_actions=n_act,
+            input_size=n_in,
             hidden_sizes=hidden_sizes,
             state_len=state_len,
-            n_atom=n_atom
+            n_out=n_out
         )
     elif policy_type == "CnnPolicy":
         return CnnPolicy(
             algo=algo,
-            n_actions=n_actions,
+            n_actions=n_act,
             state_len=state_len,
-            n_atom=n_atom
+            n_out=n_out
         )
     else:
         raise ValueError(policy_type)

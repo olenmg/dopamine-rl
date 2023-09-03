@@ -18,5 +18,5 @@
     "buffer_size": 100000,
     "train_freq": 1,
     "target_update_freq": 1,
-    "n_atom": 32
+    "n_out": 32
 }

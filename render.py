@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
 
@@ -19,15 +20,16 @@ def get_render_frames(model, env, n_step=10000):
     total_reward = 0
     done_counter = 0
     frames = []
+
     obs, _ = env.reset()
     for _ in range(n_step):
         # Render into buffer. 
-        frames.append(env.call("render")[0])
+        frames.append(env.render())
         action = model.predict(obs, eps=0.01)
 
         next_obs, reward, terminated, truncated, _ = env.step(action)
-        total_reward += reward[0]
-        if terminated[0] or truncated[0]:
+        total_reward += reward
+        if terminated or truncated:
             done_counter += 1
             obs, _ = env.reset()
         else:
@@ -46,7 +48,7 @@ def display_frames_as_gif(frames, fname="result.gif"):
         patch.set_data(frames[i])
         
     ani = animation.FuncAnimation(plt.gcf(), animate, frames=len(frames), interval=5)
-    ani.save(fname, writer='imagemagick', fps=30)
+    ani.save(fname, writer='pillow', fps=30)
 
 def render(args):
     if args.log_path:
@@ -77,7 +79,7 @@ def render(args):
 
     env = model.env
     if hasattr(env, "render_mode"):
-        env.render_mode = "rgb_array"
+        env.unwrapped.render_mode = "rgb_array"
 
     frames = get_render_frames(
         model=model,

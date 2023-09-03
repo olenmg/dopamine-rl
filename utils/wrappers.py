@@ -284,6 +284,14 @@ class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
         """
         return self.total_steps
 
+    def get_current_reset_info(self) -> Dict[str, Any]:
+        """
+        Returns the infos of current episode
+
+        :return:
+        """
+        return self.current_reset_info
+
     def get_episode_rewards(self) -> List[float]:
         """
         Returns the rewards of all the episodes
@@ -390,10 +398,15 @@ def get_env(train_config, render=False, **kwargs) -> gym.Env:
                 env = Monitor(env, log_path)
 
         if train_config.state_len > 1:
-            env = FrameStack(env, num_stack=train_config.state_len)
+            env = FrameStack(env, num_stack=train_config.state_len, lz4_compress=False)
 
         return env
-    env = gym.vector.AsyncVectorEnv([lambda x=i: wrap_(x) for i in range(train_config.n_envs)])
+
+    if train_config.n_envs == 1:
+        env = wrap_(0)
+    else:
+        env = gym.vector.AsyncVectorEnv([lambda x=i: wrap_(x) for i in range(train_config.n_envs)])
+
     return env 
 
 

@@ -2,6 +2,7 @@ from typing import Union
 
 import numpy as np
 import torch
+from gymnasium.wrappers.frame_stack import LazyFrames
 
 from rl_algo.algorithm import ValueIterationAlgorithm
 from utils.replay_buffer import ReplayBuffer
@@ -68,11 +69,12 @@ class DQN(ValueIterationAlgorithm):
             eps:
                 -1.0 at inference stage
         """
+        if isinstance(obses, LazyFrames):
+            obses = obses[:]
         if isinstance(obses, list):
             obses = np.array(list)
         if isinstance(obses, np.ndarray):
             obses = torch.from_numpy(obses)
-        # obses = obses.squeeze() # Squeezed when n_envs == 1 or state_len == 1
 
         # Epsilon-greedy
         if self.rng.random() >= eps:
@@ -84,4 +86,4 @@ class DQN(ValueIterationAlgorithm):
         else:
             action = self.rng.choice(self.n_act, size=(self.n_envs, ))
 
-        return action
+        return action.squeeze()

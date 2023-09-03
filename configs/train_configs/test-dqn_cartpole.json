@@ -1,8 +1,8 @@
 {
-    "run_name": "test-DQN",
+    "run_name": "test-DQN-CartPole",
     "algo": "DQN",
     "env_id": "CartPole-v1",
-    "n_envs": 2,
+    "n_envs": 1,
     "state_len": 1,
     "frame_skip": 1,
     "reward_clipping": false,

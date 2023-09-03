@@ -2,6 +2,7 @@ from typing import Union
 
 import numpy as np
 import torch
+from gymnasium.wrappers.frame_stack import LazyFrames
 
 from rl_algo.algorithm import ValueIterationAlgorithm
 from utils.replay_buffer import ReplayBuffer
@@ -29,7 +30,7 @@ class QRDQN(ValueIterationAlgorithm):
         self.memory = ReplayBuffer(size=algo_config.buffer_size)
         self.buffer_cnt = 0
 
-        self.n_quant = algo_config.n_atom
+        self.n_quant = algo_config.n_out
         quants = torch.linspace(0.0, 1.0, self.n_quant + 1, dtype=torch.float32).to(self.device)
         self.quants_range = (quants[:-1] + quants[1:]) / 2
 
@@ -84,11 +85,12 @@ class QRDQN(ValueIterationAlgorithm):
             eps:
                 -1.0 at inference stage
         """
+        if isinstance(obses, LazyFrames):
+            obses = obses[:]
         if isinstance(obses, list):
             obses = np.array(list)
         if isinstance(obses, np.ndarray):
             obses = torch.from_numpy(obses)
-        # obses = obses.squeeze() # Squeezed when n_envs == 1 or state_len == 1
 
         # Epsilon-greedy
         if self.rng.random() >= eps:
@@ -99,4 +101,4 @@ class QRDQN(ValueIterationAlgorithm):
         else:
             action = self.rng.choice(self.n_act, size=(self.n_envs, ))
 
-        return action
+        return action.squeeze()

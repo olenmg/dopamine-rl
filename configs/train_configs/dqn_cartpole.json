@@ -2,7 +2,7 @@
     "run_name": "DQN-CartPole-Default",
     "algo": "DQN",
     "env_id": "CartPole-v1",
-    "n_envs": 1,
+    "n_envs": 4,
     "state_len": 1,
     "frame_skip": 1,
     "reward_clipping": false,

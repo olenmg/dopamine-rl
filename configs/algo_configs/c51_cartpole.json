@@ -17,7 +17,7 @@
     "learning_starts": 1000,
     "train_freq": 1,
     "target_update_freq": 20,
-    "n_atom": 51,
     "v_min": -10,
-    "v_max": 10
+    "v_max": 10,
+    "n_out": 51
 }

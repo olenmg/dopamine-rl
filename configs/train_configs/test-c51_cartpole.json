@@ -1,22 +1,22 @@
 {
-    "run_name": "test-C51-Breakout",
+    "run_name": "test-C51-CartPole",
     "algo": "C51",
-    "env_id": "ALE/Breakout-v5",
-    "n_envs": 1,
-    "state_len": 4,
+    "env_id": "CartPole-v1",
+    "n_envs": 4,
+    "state_len": 1,
     "frame_skip": 1,
-    "reward_clipping": true,
+    "reward_clipping": false,
     "random_seed": 42,
     "loss_cls": "SoftCrossEntropyLoss",
     "loss_kwargs": {},
     "optim_cls": "Adam",
     "optim_kwargs": {
-        "lr": 0.00011
+        "lr": 0.0011
     },
-    "batch_size": 32,
+    "batch_size": 128,
     "train_step": 5000,
-    "save_freq": 250,
-    "logging_freq": 250,
+    "save_freq": 1000,
+    "logging_freq": 1000,
     "device": "auto",
     "verbose": true
 }

@@ -85,7 +85,7 @@ class C51Config(DQNConfig):
         policy_kwargs: dict,
         v_min: float = -5.,
         v_max: float = -5.,
-        n_atom: int = 51,
+        n_out: int = 51,
         eps_cls: str = "LinearDecayLS",
         eps_kwargs: dict = {
             "init_eps": 1.0,
@@ -112,14 +112,14 @@ class C51Config(DQNConfig):
         )
         self.v_min = v_min
         self.v_max = v_max
-        self.n_atom = n_atom
+        self.n_out = n_out
 
 
 class QRConfig(DQNConfig):
     def __init__(
         self,
         policy_kwargs: dict,
-        n_atom: int = 50,
+        n_out: int = 50,
         eps_cls: str = "LinearDecayLS",
         eps_kwargs: dict = {
             "init_eps": 1.0,
@@ -144,4 +144,4 @@ class QRConfig(DQNConfig):
             train_freq=train_freq,
             target_update_freq=target_update_freq
         )
-        self.n_atom = n_atom
+        self.n_out = n_out

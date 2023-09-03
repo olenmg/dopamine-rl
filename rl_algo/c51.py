@@ -2,6 +2,7 @@ from typing import Union
 
 import numpy as np
 import torch
+from gymnasium.wrappers.frame_stack import LazyFrames
 
 from rl_algo.algorithm import ValueIterationAlgorithm
 from utils.replay_buffer import ReplayBuffer
@@ -32,12 +33,12 @@ class C51(ValueIterationAlgorithm):
         self.value_range = torch.linspace(
             algo_config.v_min,
             algo_config.v_max,
-            algo_config.n_atom,
+            algo_config.n_out,
             dtype=torch.float32
         ).to(self.device)
         self.v_min = algo_config.v_min
         self.v_max = algo_config.v_max
-        self.n_atom = algo_config.n_atom
+        self.n_atom = algo_config.n_out
         self.v_step = (self.v_max - self.v_min) / (self.n_atom - 1)
 
     # Update online network with samples in the replay memory. 
@@ -105,20 +106,21 @@ class C51(ValueIterationAlgorithm):
             eps:
                 -1.0 at inference stage
         """
+        if isinstance(obses, LazyFrames):
+            obses = obses[:]
         if isinstance(obses, list):
             obses = np.array(list)
         if isinstance(obses, np.ndarray):
             obses = torch.from_numpy(obses)
-        # obses = obses.squeeze() # Squeezed when n_envs == 1 or state_len == 1
 
         # Epsilon-greedy
         if self.rng.random() >= eps:
             self.pred_net.eval()
             with torch.no_grad():
-                action_dist = self.pred_net(obses.to(self.device)) # (n_envs, n_actions, n_atom)
-                action_value = torch.sum(action_dist * self.value_range.view(1, 1, -1), dim=-1) # (n_envs, n_actions)
-                action = torch.argmax(action_value, dim=-1).cpu().numpy() # (n_envs, )
+                action_dist = self.pred_net(obses.to(self.device)) # ((n_envs,) n_actions, n_atom)
+                action_value = torch.sum(action_dist * self.value_range.view(1, 1, -1), dim=-1) # ((n_envs,) n_actions)
+                action = torch.argmax(action_value, dim=-1).cpu().numpy() # ((n_envs,) )
         else:
             action = self.rng.choice(self.n_act, size=(self.n_envs, ))
 
-        return action
+        return action.squeeze()
