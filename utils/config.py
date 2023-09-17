@@ -145,3 +145,37 @@ class QRConfig(DQNConfig):
             target_update_freq=target_update_freq
         )
         self.n_out = n_out
+
+
+class MGDQNConfig:
+    def __init__(
+        self,
+        policy_kwargs: dict,
+        n_out: int = 11,
+        gamma_min: float = 0.5,
+        gamma_max: float = 1.0,
+        gamma_n: int = 11,
+        eps_cls: str = "LinearDecayLS",
+        eps_kwargs: dict = {
+            "init_eps": 1.0,
+            "milestones": 50000,
+            "target_eps": 0.01
+        },
+        soft_update_rate: float = 1.0,
+        buffer_size: int = 100000,
+        learning_starts: int = 512,
+        train_freq: int = 1,
+        target_update_freq: int = 2048
+    ):
+        self.policy_kwargs = policy_kwargs
+        self.gamma_min = gamma_min
+        self.gamma_max = gamma_max
+        self.gamma_n = gamma_n
+        self.n_out = n_out
+        self.eps_cls = eps_cls
+        self.eps_kwargs = eps_kwargs
+        self.soft_update_rate = soft_update_rate
+        self.buffer_size = buffer_size
+        self.learning_starts = learning_starts
+        self.train_freq = train_freq
+        self.target_update_freq = target_update_freq

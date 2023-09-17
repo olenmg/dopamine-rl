@@ -6,21 +6,29 @@ from gymnasium.wrappers.frame_stack import LazyFrames
 
 from rl_algo.algorithm import ValueIterationAlgorithm
 from utils.replay_buffer import ReplayBuffer
-from utils.config import TrainConfig, DQNConfig
+from utils.config import TrainConfig, MGDQNConfig
 
 
-class DQN(ValueIterationAlgorithm):
+class MGDQN(ValueIterationAlgorithm):
     def __init__(
         self,
         train_config: TrainConfig,
-        algo_config: DQNConfig,
+        algo_config: MGDQNConfig,
         render: bool = False
     ):
         super().__init__(train_config=train_config, algo_config=algo_config, render=render)
-        assert isinstance(algo_config, DQNConfig), "Given config instance should be a DQNConfig class."
+        assert isinstance(algo_config, MGDQNConfig), "Given config instance should be a MGDQNConfig class."
 
         # DQN configurations
-        self.gamma = algo_config.discount_rate
+        self.gamma_min = algo_config.gamma_min
+        self.gamma_max = algo_config.gamma_max
+        self.gamma_n = algo_config.gamma_n
+        self.gamma_range = torch.linspace(
+            algo_config.gamma_min,
+            algo_config.gamma_max,
+            algo_config.gamma_n,
+            dtype=torch.float32
+        ).to(self.device)
         self.tau = algo_config.soft_update_rate
 
         self.learning_starts = algo_config.learning_starts
@@ -46,11 +54,16 @@ class DQN(ValueIterationAlgorithm):
 
         # Get q-value from the target network
         with torch.no_grad():
-            q_val = torch.max(self.target_net(next_obses), dim=-1).values
-            y = rewards + self.gamma * ~dones * q_val # ~dones == (1 - dones)
+            next_q_vals = self.target_net(next_obses) # (B, n_act, n_gamma)
+            next_q_vals = self.gamma_range.view(1, 1, -1) * next_q_vals # (B, n_act, n_gamma)
+            opt_acts = next_q_vals.mean(dim=-1).argmax(dim=-1).view(-1, 1, 1) # (B, 1, 1)
+            next_q_val = next_q_vals.gather(1, opt_acts.expand(-1, 1, self.gamma_n)).squeeze(1) # (B, n_gamma)
+            y = rewards.unsqueeze(-1) + (~dones).unsqueeze(-1) * next_q_val # ~dones == (1 - dones), (B, n_gamma)
 
         # Get predicted Q-value
-        pred = self.pred_net(obses).gather(1, actions.unsqueeze(1)).squeeze(-1)
+        pred = self.pred_net(obses).gather(
+            1, actions.view(-1, 1, 1).expand(-1, 1, self.gamma_n)
+        ).squeeze() # (N, n_gamma)
 
         # Forward pass & Backward pass
         self.optimizer.zero_grad()
@@ -82,9 +95,11 @@ class DQN(ValueIterationAlgorithm):
         if self.rng.random() >= eps:
             self.pred_net.eval()
             with torch.no_grad():
-                action = torch.argmax(
-                    self.pred_net(obses.to(self.device)), dim=-1
-                ).cpu().numpy()
+                action_value = torch.mean(
+                    self.gamma_range.view(1, 1, -1) * self.pred_net(obses.to(self.device)),
+                    dim=-1
+                ) # (n_envs, n_actions)
+                action = torch.argmax(action_value, dim=-1).cpu().numpy() # (n_envs, )
         else:
             action = self.rng.choice(self.n_act, size=(self.n_envs, ))
 

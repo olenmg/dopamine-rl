@@ -2,16 +2,16 @@ import os
 import json
 import argparse
 
-from rl_algo import DQN, C51, QRDQN
-from utils.config import TrainConfig, DQNConfig, C51Config, QRConfig
+from rl_algo import DQN, C51, QRDQN, MGDQN
+from utils.config import TrainConfig, DQNConfig, C51Config, QRConfig, MGDQNConfig
 from utils.plot import plot_train_result
 from render import render
 
 ALGO_CONFIG = {
-    'DQN': DQNConfig, 'C51': C51Config, 'QRDQN': QRConfig
+    'DQN': DQNConfig, 'C51': C51Config, 'QRDQN': QRConfig, 'MGDQN': MGDQNConfig
 }
 ALGO = {
-    'DQN': DQN, 'C51': C51, "QRDQN": QRDQN
+    'DQN': DQN, 'C51': C51, 'QRDQN': QRDQN, 'MGDQN': MGDQN
 }
 
 if __name__ == "__main__":

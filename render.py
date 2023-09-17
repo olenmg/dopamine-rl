@@ -6,14 +6,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
 
-from rl_algo import DQN, C51, QRDQN
-from utils.config import TrainConfig, DQNConfig, C51Config, QRConfig
+from rl_algo import DQN, C51, QRDQN, MGDQN
+from utils.config import TrainConfig, DQNConfig, C51Config, QRConfig, MGDQNConfig
 
 ALGO_CONFIG = {
-    'DQN': DQNConfig, 'C51': C51Config, 'QRDQN': QRConfig
+    'DQN': DQNConfig, 'C51': C51Config, 'QRDQN': QRConfig, 'MGDQN': MGDQNConfig
 }
 ALGO = {
-    'DQN': DQN, 'C51': C51, "QRDQN": QRDQN
+    'DQN': DQN, 'C51': C51, 'QRDQN': QRDQN, 'MGDQN': MGDQN
 }
 
 def get_render_frames(model, env, n_step=10000):

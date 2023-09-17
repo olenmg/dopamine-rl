@@ -1,0 +1,22 @@
+{
+    "run_name": "MGDQN-Atari-Default",
+    "algo": "MGDQN",
+    "env_id": "ALE/Breakout-v5",
+    "n_envs": 1,
+    "state_len": 4,
+    "frame_skip": 1,
+    "reward_clipping": true,
+    "random_seed": 42,
+    "loss_cls": "SmoothL1Loss",
+    "loss_kwargs": {},
+    "optim_cls": "Adam",
+    "optim_kwargs": {
+        "lr": 2.5e-4
+    },
+    "batch_size": 32,
+    "train_step": 50000000,
+    "save_freq": 1000000,
+    "logging_freq": 100000,
+    "device": "auto",
+    "verbose": true
+}

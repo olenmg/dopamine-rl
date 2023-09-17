@@ -70,7 +70,7 @@ class MlpPolicy(PolicyNetwork):
             action_value = self.fc_q(x)
         elif self.algo == "C51":
             action_value = F.softmax(self.fc_q(x).view(-1, self.n_actions, self.n_out), dim=-1)
-        elif self.algo == "QRDQN":
+        elif self.algo == "QRDQN" or self.algo == "MGDQN":
             action_value = self.fc_q(x).view(-1, self.n_actions, self.n_out)
 
         return action_value.squeeze()
@@ -131,7 +131,7 @@ class CnnPolicy(PolicyNetwork):
             action_value = self.fc_q(x)
         elif self.algo == "C51":
             action_value = F.softmax(self.fc_q(x).view(-1, self.n_actions, self.n_out), dim=-1)
-        elif self.algo == "QRDQN":
+        elif self.algo == "QRDQN" or self.algo == "MGDQN":
             action_value = self.fc_q(x).view(-1, self.n_actions, self.n_out)
 
         return action_value.squeeze()
