@@ -55,15 +55,19 @@ class MGDQN(ValueIterationAlgorithm):
         # Get q-value from the target network
         with torch.no_grad():
             next_q_vals = self.target_net(next_obses) # (B, n_act, n_gamma)
-            next_q_vals = self.gamma_range.view(1, 1, -1) * next_q_vals # (B, n_act, n_gamma)
-            opt_acts = next_q_vals.mean(dim=-1).argmax(dim=-1).view(-1, 1, 1) # (B, 1, 1)
-            next_q_val = next_q_vals.gather(1, opt_acts.expand(-1, 1, self.gamma_n)).squeeze(1) # (B, n_gamma)
-            y = rewards.unsqueeze(-1) + (~dones).unsqueeze(-1) * next_q_val # ~dones == (1 - dones), (B, n_gamma)
-
+            batched_votes = next_q_vals.argmax(dim=1) # (B, n_gamma)
+            opt_acts = []
+            for votes in batched_votes:
+                opt_acts.append(torch.bincount(votes).argmax().item())
+            opt_acts = torch.tensor(opt_acts, device=self.device).view(-1, 1, 1) # (B, 1, 1)
+            next_q_vals = next_q_vals.gather(1, opt_acts.expand(-1, 1, self.gamma_n)).squeeze(1) # (B, n_gamma)
+            y = rewards.unsqueeze(-1) + \
+                (~dones).unsqueeze(-1) * self.gamma_range.view(1, -1) * next_q_vals # ~dones == (1 - dones), (B, n_gamma)
+    
         # Get predicted Q-value
         pred = self.pred_net(obses).gather(
             1, actions.view(-1, 1, 1).expand(-1, 1, self.gamma_n)
-        ).squeeze() # (N, n_gamma)
+        ).squeeze() # (B, n_gamma)
 
         # Forward pass & Backward pass
         self.optimizer.zero_grad()

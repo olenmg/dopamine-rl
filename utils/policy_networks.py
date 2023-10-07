@@ -70,16 +70,16 @@ class MlpPolicy(PolicyNetwork):
         for layer in self.linears:
             x = F.relu(layer(x))
 
-        action_value = self.fc_q(x) # (B, n_act * X)
+        out = self.fc_q(x) # (B, n_act * X)
         if isinstance(self.n_out, int) and self.n_out != -1:
-            out = action_value.view(-1, self.n_actions, self.n_out)
+            out = out.view(-1, self.n_actions, self.n_out)
         elif isinstance(self.n_out, Iterable_):
-            out = action_value.view(-1, self.n_actions, *self.n_out)
+            out = out.view(-1, self.n_actions, *self.n_out)
         
         if self.algo == "C51":
             out = F.softmax(out, dim=-1)
 
-        return action_value.squeeze() # squeeze required for the case when n_env == 1
+        return out.squeeze() # squeeze required for the case when n_env == 1
 
 
 class CnnPolicy(PolicyNetwork):
@@ -88,7 +88,7 @@ class CnnPolicy(PolicyNetwork):
         algo: str,
         n_actions: int,
         state_len: int = 1,
-        n_out: int = -1
+        n_out: Union[int, Iterable[int]] = -1,
     ):
         """
             n_out: If given, network will be built for C51 algorithm
@@ -109,10 +109,13 @@ class CnnPolicy(PolicyNetwork):
         )
         self.fc = nn.Linear(7 * 7 * 64, 512)
 
-        if self.algo == "DQN":
+        if n_out == -1:
             self.fc_q = nn.Linear(512, n_actions)
         else:
-            self.fc_q = nn.Linear(512, n_actions * n_out)
+            self.fc_q = nn.Linear(
+                512,
+                n_actions * (n_out if isinstance(n_out, int) else prod(n_out))
+            )
 
         # action value distribution
         self.n_actions = n_actions
@@ -133,17 +136,16 @@ class CnnPolicy(PolicyNetwork):
         x = x.flatten(start_dim=1)
         x = F.relu(self.fc(x))
 
-
-        action_value = self.fc_q(x) # (B, n_act * X)
+        out = self.fc_q(x) # (B, n_act * X)
         if isinstance(self.n_out, int) and self.n_out != -1:
-            out = action_value.view(-1, self.n_actions, self.n_out)
+            out = out.view(-1, self.n_actions, self.n_out)
         elif isinstance(self.n_out, Iterable_):
-            out = action_value.view(-1, self.n_actions, *self.n_out)
+            out = out.view(-1, self.n_actions, *self.n_out)
 
         if self.algo == "C51":
             out = F.softmax(out, dim=-1)
 
-        return action_value.squeeze() # squeeze required for the case when n_env == 1
+        return out.squeeze() # squeeze required for the case when n_env == 1
 
 
 def get_policy_networks(
@@ -152,7 +154,7 @@ def get_policy_networks(
     state_len: int,
     n_act: Union[int, Iterable[int]],
     n_in: Union[int, Iterable[int]],
-    n_out: int = -1,
+    n_out: Union[int, Iterable[int]] = -1,
     hidden_sizes: Iterable[int] = None
 ) -> PolicyNetwork:
     if policy_type == "MlpPolicy":
