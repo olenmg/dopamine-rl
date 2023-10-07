@@ -85,7 +85,7 @@ class C51Config(DQNConfig):
         policy_kwargs: dict,
         v_min: float = -5.,
         v_max: float = -5.,
-        n_out: int = 51,
+        n_atom: int = 51,
         eps_cls: str = "LinearDecayLS",
         eps_kwargs: dict = {
             "init_eps": 1.0,
@@ -112,14 +112,15 @@ class C51Config(DQNConfig):
         )
         self.v_min = v_min
         self.v_max = v_max
-        self.n_out = n_out
+        self.n_atom = n_atom
+        self.n_out = n_atom
 
 
 class QRConfig(DQNConfig):
     def __init__(
         self,
         policy_kwargs: dict,
-        n_out: int = 50,
+        n_quant: int = 50,
         eps_cls: str = "LinearDecayLS",
         eps_kwargs: dict = {
             "init_eps": 1.0,
@@ -144,17 +145,17 @@ class QRConfig(DQNConfig):
             train_freq=train_freq,
             target_update_freq=target_update_freq
         )
-        self.n_out = n_out
+        self.n_quant = n_quant
+        self.n_out = n_quant
 
 
 class MGDQNConfig:
     def __init__(
         self,
         policy_kwargs: dict,
-        n_out: int = 11,
-        gamma_min: float = 0.5,
-        gamma_max: float = 1.0,
-        gamma_n: int = 11,
+        gamma_min: float = 0.8,
+        gamma_max: float = 0.99,
+        gamma_n: int = 10,
         eps_cls: str = "LinearDecayLS",
         eps_kwargs: dict = {
             "init_eps": 1.0,
@@ -171,7 +172,7 @@ class MGDQNConfig:
         self.gamma_min = gamma_min
         self.gamma_max = gamma_max
         self.gamma_n = gamma_n
-        self.n_out = n_out
+        self.n_out = gamma_n
         self.eps_cls = eps_cls
         self.eps_kwargs = eps_kwargs
         self.soft_update_rate = soft_update_rate
@@ -179,3 +180,46 @@ class MGDQNConfig:
         self.learning_starts = learning_starts
         self.train_freq = train_freq
         self.target_update_freq = target_update_freq
+
+
+class MGC51Config(MGDQNConfig):
+    def __init__(
+        self,
+        policy_kwargs: dict,
+        v_min: float = -5.,
+        v_max: float = -5.,
+        n_atom: int = 51,
+        gamma_min: float = 0.8,
+        gamma_max: float = 0.99,
+        gamma_n: int = 11,
+        eps_cls: str = "LinearDecayLS",
+        eps_kwargs: dict = {
+            "init_eps": 1.0,
+            "milestones": 50000,
+            "target_eps": 0.01
+        },
+        discount_rate: float = 0.98,
+        soft_update_rate: float = 1.0,
+        buffer_size: int = 100000,
+        learning_starts: int = 512,
+        train_freq: int = 1,
+        target_update_freq: int = 512,
+    ):
+        super().__init__(
+            policy_kwargs=policy_kwargs,
+            gamma_min=gamma_min,
+            gamma_max=gamma_max,
+            gamma_n=gamma_n,
+            eps_cls=eps_cls,
+            eps_kwargs=eps_kwargs,
+            discount_rate=discount_rate,
+            soft_update_rate=soft_update_rate,
+            buffer_size=buffer_size,
+            learning_starts=learning_starts,
+            train_freq=train_freq,
+            target_update_freq=target_update_freq
+        )
+        self.v_min = v_min
+        self.v_max = v_max
+        self.n_out = (gamma_n, n_atom)
+        self.n_atom = n_atom

@@ -30,7 +30,7 @@ class QRDQN(ValueIterationAlgorithm):
         self.memory = ReplayBuffer(size=algo_config.buffer_size)
         self.buffer_cnt = 0
 
-        self.n_quant = algo_config.n_out
+        self.n_quant = algo_config.n_quant
         quants = torch.linspace(0.0, 1.0, self.n_quant + 1, dtype=torch.float32).to(self.device)
         self.quants_range = (quants[:-1] + quants[1:]) / 2
 

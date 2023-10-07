@@ -33,12 +33,12 @@ class C51(ValueIterationAlgorithm):
         self.value_range = torch.linspace(
             algo_config.v_min,
             algo_config.v_max,
-            algo_config.n_out,
+            algo_config.n_atom,
             dtype=torch.float32
         ).to(self.device)
         self.v_min = algo_config.v_min
         self.v_max = algo_config.v_max
-        self.n_atom = algo_config.n_out
+        self.n_atom = algo_config.n_atom
         self.v_step = (self.v_max - self.v_min) / (self.n_atom - 1)
 
     # Update online network with samples in the replay memory. 

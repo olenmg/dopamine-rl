@@ -16,5 +16,5 @@
     "target_update_freq": 10000,
     "v_min": -10,
     "v_max": 10,
-    "n_out": 51
+    "n_atom": 51
 }
