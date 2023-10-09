@@ -104,7 +104,6 @@ class MGDQN(ValueIterationAlgorithm):
             with torch.no_grad():
                 q_vals = self.pred_net(obses.to(self.device)) # ((n_envs,) n_act, gamma_n)
                 batched_votes = q_vals.argmax(dim=-2) # ((n_envs,) gamma_n)
-                print(batched_votes)
                 if self.n_envs == 1:
                     action = torch.bincount(batched_votes).argmax().cpu().item()
                 else:
