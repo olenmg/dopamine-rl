@@ -2,17 +2,11 @@ import os
 import json
 import argparse
 
-from rl_algo import DQN, C51, QRDQN, MGDQN
-from utils.config import TrainConfig, DQNConfig, C51Config, QRConfig, MGDQNConfig
+from rl_algo import *
+from utils.config import *
 from utils.plot import plot_train_result
 from render import render
 
-ALGO_CONFIG = {
-    'DQN': DQNConfig, 'C51': C51Config, 'QRDQN': QRConfig, 'MGDQN': MGDQNConfig
-}
-ALGO = {
-    'DQN': DQN, 'C51': C51, 'QRDQN': QRDQN, 'MGDQN': MGDQN
-}
 
 ENVS = [
     "ALE/Alien-v5", "ALE/Amidar-v5", "ALE/BeamRider-v5",

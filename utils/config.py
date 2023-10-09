@@ -223,3 +223,19 @@ class MGC51Config(MGDQNConfig):
         self.v_max = v_max
         self.n_out = (gamma_n, n_atom)
         self.n_atom = n_atom
+
+
+ALGO_CONFIG = {
+    'DQN': DQNConfig, 'C51': C51Config, 'QRDQN': QRConfig, 'MGDQN': MGDQNConfig, 'MGC51': MGC51Config
+}
+
+
+__all__ = [
+    "ALGO_CONFIG",
+    "TrainConfig",
+    "DQNConfig",
+    "C51Config",
+    "QRConfig",
+    "MGDQNConfig",
+    "MGC51Config",
+]
