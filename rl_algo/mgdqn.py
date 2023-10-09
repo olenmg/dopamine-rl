@@ -102,11 +102,16 @@ class MGDQN(ValueIterationAlgorithm):
         if self.rng.random() >= eps:
             self.pred_net.eval()
             with torch.no_grad():
-                action_value = torch.mean(
-                    self.gamma_range.view(1, 1, -1) * self.pred_net(obses.to(self.device)),
-                    dim=-1
-                ) # (n_envs, n_actions)
-                action = torch.argmax(action_value, dim=-1).cpu().numpy() # (n_envs, )
+                q_vals = self.pred_net(obses.to(self.device)) # ((n_envs,) n_act, gamma_n)
+                batched_votes = q_vals.argmax(dim=-2) # ((n_envs,) gamma_n)
+                print(batched_votes)
+                if self.n_envs == 1:
+                    action = torch.bincount(batched_votes).argmax().cpu().item()
+                else:
+                    action = []
+                    for votes in batched_votes:
+                        action.append(torch.bincount(votes).argmax().cpu().item())
+                action = np.asarray(action) # ((n_envs,) )
         else:
             action = self.rng.choice(self.n_act, size=(self.n_envs, ))
 
