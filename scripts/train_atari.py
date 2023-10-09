@@ -42,6 +42,14 @@ if __name__ == "__main__":
         help="Algorithm"
     )
     parser.add_argument(
+        '--run_name', type=str,
+        help="Run name (name of log)"
+    )
+    parser.add_argument(
+        '--cfg', type=str,
+        help="Name of config file"
+    )
+    parser.add_argument(
         '--start_idx', type=int, default=0,
         help="Start index of envs"
     )
@@ -52,15 +60,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     algo, algo_config = ALGO[args.algo], ALGO_CONFIG[args.algo]
-    cfg_name = f"{args.algo.lower()}_atari.json"
-
     for env_id in ENVS[args.start_idx:args.end_idx]:
         print(f"Start to train {args.algo} in {env_id} environment.")
-        with open(os.path.join("configs/train_configs", cfg_name), "r") as f:
+        with open(os.path.join("configs/train_configs", args.cfg), "r") as f:
             train_config = TrainConfig(**json.load(f))
-        with open(os.path.join("configs/algo_configs", cfg_name), "r") as f:
+        with open(os.path.join("configs/algo_configs", args.cfg), "r") as f:
             algo_config = ALGO_CONFIG[train_config.algo](**json.load(f))
-        train_config.run_name = args.log_path = f"{args.algo}-{env_id[4:-3]}"
+        train_config.run_name = args.log_path = f"{args.algo}-{env_id[4:-3]}-{args.run_name}"
         train_config.env_id = env_id
 
         print(train_config.__dict__)
