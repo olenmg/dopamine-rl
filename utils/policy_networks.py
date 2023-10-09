@@ -175,3 +175,111 @@ def get_policy_networks(
         )
     else:
         raise ValueError(policy_type)
+
+
+if __name__ == "__main__":
+    mlp_test_arguments = (
+        ["DQN", 2, 4, [64, 64], 1, -1],
+        ["C51", 2, 4, [64, ], 1, 51],
+        ["QRDQN", 2, 4, [64, ], 1, 20],
+        ["MGDQN", 2, 4, [64, 64], 1, 10],
+        ["MGC51", 2, 4, [64, ], 1, (10, 51)],
+    )
+    cnn_test_arguments = (
+        ["DQN", 2, 1, -1],
+        ["C51", 2, 1, 51],
+        ["QRDQN", 2, 1, 20],
+        ["MGDQN", 2, 1, 10],
+        ["MGC51", 2, 1, (10, 51)],
+    )
+    
+    BATCH_SIZE = 4
+
+    print("Policy: MlpPlicy")
+    for n_env in (1, 4):
+        for state_len in (1, 4):
+            for i, args in enumerate(mlp_test_arguments):
+                print(f"Algorithm: {args[0]} | n_env: {n_env} | state_len: {state_len}")
+                model = MlpPolicy(*args)
+                tr_input = torch.randn(BATCH_SIZE, args[4], 4)
+                if n_env == 1:
+                    inf_input = torch.randn(args[4], 4)
+                else:
+                    inf_input = torch.randn(n_env, args[4], 4)
+                
+                if args[0] == "DQN":
+                    training_answer = torch.randn(BATCH_SIZE, args[1])
+                elif args[0] == "C51":
+                    training_answer = torch.randn(BATCH_SIZE, args[1], args[-1])
+                elif args[0] == "QRDQN":
+                    training_answer = torch.randn(BATCH_SIZE, args[1], args[-1])
+                elif args[0] == "MGDQN":
+                    training_answer = torch.randn(BATCH_SIZE, args[1], args[-1])
+                elif args[0] == "MGC51":
+                    training_answer = torch.randn(BATCH_SIZE, args[1], *args[-1])
+
+                if args[0] == "DQN":
+                    inference_answer = torch.randn(n_env, args[1])
+                elif args[0] == "C51":
+                    inference_answer = torch.randn(n_env, args[1], args[-1])
+                elif args[0] == "QRDQN":
+                    inference_answer = torch.randn(n_env, args[1], args[-1])
+                elif args[0] == "MGDQN":
+                    inference_answer = torch.randn(n_env, args[1], args[-1])
+                elif args[0] == "MGC51":
+                    inference_answer = torch.randn(n_env, args[1], *args[-1])
+                
+                if n_env == 1:
+                    inference_answer = inference_answer.squeeze(0)
+
+                assert model(tr_input).shape == training_answer.shape,\
+                    f"Incorrect! Training stage | Input: {tr_input.shape} | Output: {model(tr_input).shape}"
+                assert model(inf_input).shape == inference_answer.shape,\
+                    f"Incorrect! Inference stage | Input: {inf_input.shape} | Output: {model(inf_input).shape}"
+                print("OK!")
+            print("----------------------------")
+
+
+    print("Policy: CnnPlicy")
+    for n_env in (1, 4):
+        for state_len in (1, 4):
+            for i, args in enumerate(cnn_test_arguments):
+                print(f"Algorithm: {args[0]} | n_env: {n_env} | state_len: {state_len}")
+                model = CnnPolicy(*args)
+                tr_input = torch.randn(BATCH_SIZE, args[2], 84, 84)
+                if n_env == 1:
+                    inf_input = torch.randn(args[2], 84, 84)
+                else:
+                    inf_input = torch.randn(n_env, args[2], 84, 84)
+                
+                if args[0] == "DQN":
+                    training_answer = torch.randn(BATCH_SIZE, args[1])
+                elif args[0] == "C51":
+                    training_answer = torch.randn(BATCH_SIZE, args[1], args[-1])
+                elif args[0] == "QRDQN":
+                    training_answer = torch.randn(BATCH_SIZE, args[1], args[-1])
+                elif args[0] == "MGDQN":
+                    training_answer = torch.randn(BATCH_SIZE, args[1], args[-1])
+                elif args[0] == "MGC51":
+                    training_answer = torch.randn(BATCH_SIZE, args[1], *args[-1])
+
+                if args[0] == "DQN":
+                    inference_answer = torch.randn(n_env, args[1])
+                elif args[0] == "C51":
+                    inference_answer = torch.randn(n_env, args[1], args[-1])
+                elif args[0] == "QRDQN":
+                    inference_answer = torch.randn(n_env, args[1], args[-1])
+                elif args[0] == "MGDQN":
+                    inference_answer = torch.randn(n_env, args[1], args[-1])
+                elif args[0] == "MGC51":
+                    inference_answer = torch.randn(n_env, args[1], *args[-1])
+                
+                if n_env == 1:
+                    inference_answer = inference_answer.squeeze(0)
+
+                assert model(tr_input).shape == training_answer.shape,\
+                    f"Incorrect! Training stage | Input: {tr_input.shape} | Output: {model(tr_input).shape}"
+                assert model(inf_input).shape == inference_answer.shape,\
+                    f"Incorrect! Inference stage | Input: {inf_input.shape} | Output: {model(inf_input).shape}"
+                print("OK!")
+            print("----------------------------")
