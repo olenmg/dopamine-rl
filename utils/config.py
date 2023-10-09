@@ -198,7 +198,6 @@ class MGC51Config(MGDQNConfig):
             "milestones": 50000,
             "target_eps": 0.01
         },
-        discount_rate: float = 0.98,
         soft_update_rate: float = 1.0,
         buffer_size: int = 100000,
         learning_starts: int = 512,
@@ -212,7 +211,6 @@ class MGC51Config(MGDQNConfig):
             gamma_n=gamma_n,
             eps_cls=eps_cls,
             eps_kwargs=eps_kwargs,
-            discount_rate=discount_rate,
             soft_update_rate=soft_update_rate,
             buffer_size=buffer_size,
             learning_starts=learning_starts,

@@ -13,6 +13,7 @@ ALGO = {
 }
 
 __all__ = [
+    "ALGO",
     "DQN",
     "C51",
     "QRDQN",
