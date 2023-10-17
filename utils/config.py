@@ -66,7 +66,8 @@ class DQNConfig:
         buffer_size: int = 100000,
         learning_starts: int = 512,
         train_freq: int = 1,
-        target_update_freq: int = 2048
+        target_update_freq: int = 2048,
+        n_out: int = -1
     ):
         self.policy_kwargs = policy_kwargs
         self.eps_cls = eps_cls
@@ -98,6 +99,7 @@ class C51Config(DQNConfig):
         learning_starts: int = 512,
         train_freq: int = 1,
         target_update_freq: int = 512,
+        n_out: int = -1
     ):
         super().__init__(
             policy_kwargs=policy_kwargs,
@@ -133,6 +135,7 @@ class QRConfig(DQNConfig):
         learning_starts: int = 512,
         train_freq: int = 1,
         target_update_freq: int = 512,
+        n_out: int = -1
     ):
         super().__init__(
             policy_kwargs=policy_kwargs,
@@ -166,7 +169,8 @@ class MGDQNConfig:
         buffer_size: int = 100000,
         learning_starts: int = 512,
         train_freq: int = 1,
-        target_update_freq: int = 2048
+        target_update_freq: int = 2048,
+        n_out: int = -1
     ):
         self.policy_kwargs = policy_kwargs
         self.gamma_min = gamma_min
@@ -203,6 +207,7 @@ class MGC51Config(MGDQNConfig):
         learning_starts: int = 512,
         train_freq: int = 1,
         target_update_freq: int = 512,
+        n_out: int = -1
     ):
         super().__init__(
             policy_kwargs=policy_kwargs,

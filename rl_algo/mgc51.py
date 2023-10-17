@@ -129,9 +129,11 @@ class MGC51(ValueIterationAlgorithm):
         if self.rng.random() >= eps:
             self.pred_net.eval()
             with torch.no_grad():
-                q_dist = self.pred_net(obses.to(self.device))
-                q_vals = q_dist * self.value_range.view((1, ) * (q_dist.dim() - 1) + (-1, ))
-                q_vals = torch.sum(q_vals, dim=-1) # ((n_envs,) n_act, gamma_n)
+                q_dist = self.pred_net(obses.to(self.device)) # ((n_envs,) n_act, gamma_n, n_atom)
+                q_vals = torch.sum(
+                    q_dist * self.value_range.view((1, ) * (q_dist.dim() - 1) + (-1, )),
+                    dim=-1
+                ) # ((n_envs,) n_act, gamma_n)
                 batched_votes = q_vals.argmax(dim=-2) # ((n_envs,) gamma_n)
                 if self.n_envs == 1:
                     action = torch.bincount(batched_votes).argmax().cpu().item()
