@@ -159,6 +159,7 @@ class MGDQNConfig:
         gamma_min: float = 0.8,
         gamma_max: float = 0.99,
         gamma_n: int = 10,
+        soft_vote: bool = False,
         eps_cls: str = "LinearDecayLS",
         eps_kwargs: dict = {
             "init_eps": 1.0,
@@ -176,6 +177,7 @@ class MGDQNConfig:
         self.gamma_min = gamma_min
         self.gamma_max = gamma_max
         self.gamma_n = gamma_n
+        self.soft_vote = soft_vote
         self.n_out = gamma_n
         self.eps_cls = eps_cls
         self.eps_kwargs = eps_kwargs
@@ -196,6 +198,7 @@ class MGC51Config(MGDQNConfig):
         gamma_min: float = 0.8,
         gamma_max: float = 0.99,
         gamma_n: int = 11,
+        soft_vote: bool = False,
         eps_cls: str = "LinearDecayLS",
         eps_kwargs: dict = {
             "init_eps": 1.0,
@@ -214,6 +217,7 @@ class MGC51Config(MGDQNConfig):
             gamma_min=gamma_min,
             gamma_max=gamma_max,
             gamma_n=gamma_n,
+            soft_vote=soft_vote,
             eps_cls=eps_cls,
             eps_kwargs=eps_kwargs,
             soft_update_rate=soft_update_rate,
