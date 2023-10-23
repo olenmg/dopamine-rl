@@ -74,7 +74,10 @@ class MGC51(ValueIterationAlgorithm):
 
             # Action decisions
             if self.soft_vote:
-                raise NotImplementedError
+                next_q_vals = torch.sum(
+                    next_q_dist * self.value_range.view(1, 1, 1, -1), dim=-1
+                ) # (B, n_act, gamma_n)
+                opt_acts = next_q_vals.mean(dim=-1).argmax(dim=-1).view(-1, 1, 1, 1)
             else:
                 batched_votes = torch.sum(
                     next_q_dist * self.value_range.view(1, 1, 1, -1), dim=-1
@@ -83,9 +86,10 @@ class MGC51(ValueIterationAlgorithm):
                 for votes in batched_votes:
                     opt_acts.append(torch.bincount(votes).argmax().item())
                 opt_acts = torch.tensor(opt_acts, device=self.device).view(-1, 1, 1, 1) # (B, 1, 1, 1)
-                est_q_dist = next_q_dist.gather(
-                    1, opt_acts.expand(-1, 1, self.gamma_n, self.n_atom)
-                ).squeeze() # (B, gamma_n, n_atom)
+
+            est_q_dist = next_q_dist.gather(
+                1, opt_acts.expand(-1, 1, self.gamma_n, self.n_atom)
+            ).squeeze() # (B, gamma_n, n_atom)
 
             # Calculate the y-distribution with estimated value distribution
             next_v_range = rewards.view(-1, 1, 1) + \
@@ -135,14 +139,17 @@ class MGC51(ValueIterationAlgorithm):
         if self.rng.random() >= eps:
             self.pred_net.eval()
             with torch.no_grad():
+                q_dist = self.pred_net(obses.to(self.device)) # ((n_envs,) n_act, gamma_n, n_atom)
+                q_vals = torch.sum(
+                    q_dist * self.value_range.view((1, ) * (q_dist.dim() - 1) + (-1, )),
+                    dim=-1
+                ) # ((n_envs,) n_act, gamma_n)
+
+                # Action decisions
                 if self.soft_vote:
-                    raise NotImplementedError
+                    action = q_vals.mean(dim=-1).argmax(dim=-1).cpu().numpy() # ((n_envs,) )
                 else:
-                    q_dist = self.pred_net(obses.to(self.device)) # ((n_envs,) n_act, gamma_n, n_atom)
-                    q_vals = torch.sum(
-                        q_dist * self.value_range.view((1, ) * (q_dist.dim() - 1) + (-1, )),
-                        dim=-1
-                    ) # ((n_envs,) n_act, gamma_n)
+                    # ((n_envs,) n_act, gamma_n)
                     batched_votes = q_vals.argmax(dim=-2) # ((n_envs,) gamma_n)
                     if self.n_envs == 1:
                         action = torch.bincount(batched_votes).argmax().cpu().item()
