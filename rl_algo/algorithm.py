@@ -123,12 +123,12 @@ class ValueIterationAlgorithm(RLAlgorithm):
             self.add_to_buffer(obs, action, next_obs, reward, terminated, truncated)
 
             # Logging
-            if self.n_envs == 1:
+            if self.n_envs == 1: # Single environment
                 if terminated or truncated:
                     episode_infos.append(infos["episode"])
                     episode_deque.append(infos["episode"]["r"])
                     next_obs, _ = self.env.reset()
-            else:
+            else: # Vectorized environment
                 for info in infos.get("final_info", []):
                     if info:
                         episode_infos.append(info["episode"])
@@ -137,14 +137,15 @@ class ValueIterationAlgorithm(RLAlgorithm):
             # Learning if enough timestep has been gone 
             if (self.buffer_cnt >= self.learning_starts) \
                     and (self.buffer_cnt % self.train_freq == 0):
-                self.update_network()
+                self.update_network() # Train using replay buffer
 
             # Periodically copies the parameter of the pred network to the target network
             if step % self.target_update_freq == 0:
                 self.update_target()
             obs = next_obs
-            self.update_epsilon()
+            self.update_epsilon() # Epsilon-greedy
             
+            # Logging
             if episode_deque:
                 # Verbose (stdout logging)
                 if (step % self.logging_freq == 0):
@@ -176,11 +177,11 @@ class ValueIterationAlgorithm(RLAlgorithm):
         terminated: np.ndarray, # bool, (n_envs, *)
         truncated: np.ndarray # bool, (n_envs, *)
     ) -> None:
-        if self.n_envs == 1:
+        if self.n_envs == 1: # Single environment
             done = terminated or truncated
             self.memory.add(obs, action, reward, next_obs, done)
             self.buffer_cnt += 1
-        else:
+        else: # Vectorized environment
             done = np.any([terminated, truncated], axis=0)
             for i in range(self.n_envs):
                 self.memory.add(obs[i], action[i], reward[i], next_obs[i], done[i])
