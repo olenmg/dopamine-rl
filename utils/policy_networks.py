@@ -89,6 +89,7 @@ class CnnPolicy(PolicyNetwork):
         n_actions: int,
         state_len: int = 1,
         n_out: Union[int, Iterable[int]] = -1,
+        rgb_array: bool = False
     ):
         """
             n_out: If given, network will be built for C51 algorithm
@@ -100,7 +101,7 @@ class CnnPolicy(PolicyNetwork):
         # Expected input tensor shape: (B, state_len, 84, 84)
         # Input (B, 210, 160, 3) will be processed by `ProcessFrame84` wrapper -> (B, 84, 84, state_len)
         self.conv = nn.Sequential(
-            nn.Conv2d(state_len, 32, kernel_size=8, stride=4),
+            nn.Conv2d(state_len if not rgb_array else 3, 32, kernel_size=8, stride=4),
             nn.ReLU(),
             nn.Conv2d(32, 64, kernel_size=4, stride=2),
             nn.ReLU(),
@@ -121,15 +122,16 @@ class CnnPolicy(PolicyNetwork):
         self.n_actions = n_actions
         self.n_out = n_out
         self.state_len = state_len
+        self.rgb_array = rgb_array
 
         self._init_weight()
 
     def forward(self, x):
-        if x.dim() == 2: # When n_envs == 1 and state_len == 1
+        if x.dim() == 2: # When n_envs == 1 and state_len == 1 and not rgb_array
             x = x.unsqueeze(0).unsqueeze(0)
-        elif x.dim() == 3 and self.state_len == 1: # When n_envs > 1
+        elif x.dim() == 3 and (self.state_len == 1 and not self.rgb_array):
             x = x.unsqueeze(1)
-        elif x.dim() == 3 and self.state_len != 1: # When n_envs == 1
+        elif x.dim() == 3 and (self.state_len != 1 or self.rgb_array):
             x = x.unsqueeze(0)
 
         x = self.conv(x / 255.0)
@@ -155,7 +157,8 @@ def get_policy_networks(
     n_act: Union[int, Iterable[int]],
     n_in: Union[int, Iterable[int]],
     n_out: Union[int, Iterable[int]] = -1,
-    hidden_sizes: Iterable[int] = None
+    hidden_sizes: Iterable[int] = None,
+    rgb_array: bool = False
 ) -> PolicyNetwork:
     if policy_type == "MlpPolicy":
         return MlpPolicy(
@@ -171,7 +174,8 @@ def get_policy_networks(
             algo=algo,
             n_actions=n_act,
             state_len=state_len,
-            n_out=n_out
+            n_out=n_out,
+            rgb_array=rgb_array
         )
     else:
         raise ValueError(policy_type)

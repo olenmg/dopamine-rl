@@ -3,6 +3,8 @@
 *.csv
 *.ipynb
 *.mp4
+*.gif
+*profile.py
 
 results/
 

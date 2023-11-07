@@ -72,8 +72,19 @@ class Whiteboard(object):
             cv2.circle(self._board, position, self.radius, color, -1)
         cv2.circle(self._board, self.agent_position, self.radius, self.agent_color, -1)
 
-    def get_board(self):
-        return self.saturate_dark(self._board, int(255 * self.time / (self.end_time - self.start_time)))
+    def get_state(self):
+        return self.saturate_dark(
+            self._board, 
+            int(255 * self.time / (self.end_time - self.start_time))
+        ).transpose(2, 0, 1)
+
+    def get_frame_for_render(self):
+        frame = self.saturate_dark(
+            self._board,
+            int(255 * self.time / (self.end_time - self.start_time))
+        )
+        cv2.resize(frame, (256, 256), interpolation=cv2.INTER_CUBIC)
+        return frame
 
     @staticmethod
     def saturate_dark(img, darker):
@@ -149,7 +160,7 @@ class BallCrashing(gym.Env):
             "balls": self.balls
         }
 
-        return self.board.get_board(), info
+        return self.board.get_state(), info
 
     def step(self, action):
         self.cur_time += 1
@@ -185,10 +196,10 @@ class BallCrashing(gym.Env):
             "cur_time": self.cur_time
         }
 
-        return self.board.get_board(), reward, done, False, info
+        return self.board.get_state(), reward, done, False, info
 
     def render(self):
-        return cv2.resize(self.board.get_board(), (256, 256), interpolation=cv2.INTER_CUBIC)
+        return self.board.get_frame_for_render()
 
     def make_new_ball(self, ball_type: str) -> Tuple[Tuple[int, int], str]:
         assert len(self.balls) <= self.num_good + self.num_bad, "Too many balls."

@@ -389,7 +389,11 @@ def get_env(train_config, render=False, **kwargs) -> gym.Env:
             env = CUSTOM_ENVS[train_config.env_id](**kwargs)
             if not render:
                 env = Monitor(env, log_path)
-            env = MouseVRPreprocessing(env)
+
+            if "OLoop" in train_config.env_id or "CLoop" in train_config.env_id: # Mouse VR
+                env = MouseVRPreprocessing(env)
+            else: # Ball crashing
+                pass # No preprocessing
         else: # Other envs
             if train_config.frame_skip != 1:
                 kwargs["frameskip"] = train_config.frame_skip
