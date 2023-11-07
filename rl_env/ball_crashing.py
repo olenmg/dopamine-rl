@@ -111,9 +111,6 @@ class Whiteboard(object):
             "Omniscient view",
             (264, 12), cv2.FONT_ITALIC, 0.5, (0, 0, 0), 1
         )
-        cv2.imshow('test', frame)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
         return frame
 
     def get_brightness(self):
@@ -341,7 +338,7 @@ if __name__ == "__main__":
     env = BallCrashing()
     frames = get_render_frames(
         env=env,
-        n_step=1000
+        n_step=2000
     )
 
     display_frames_as_gif(

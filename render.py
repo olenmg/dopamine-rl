@@ -78,7 +78,7 @@ def render(args):
     frames = get_render_frames(
         model=model,
         env=env,
-        n_step=10000
+        n_step=2000
     )
 
     display_frames_as_gif(
