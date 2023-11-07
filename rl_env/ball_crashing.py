@@ -30,23 +30,25 @@ COLORS = {
 }
 
 class Whiteboard(object):
-    def __init__(self, day_len, radius=3, size=(84, 84), bg_color=(255, 255, 255)):
+    def __init__(self, day_len, radius=5, size=(84, 84), bg_color=(255, 255, 255)):
         self.day_len = day_len
         self.radius = radius
         self.size = size
         self.bg_color = bg_color
         self.agent_color = (0, 0, 0) # Black
+        self.agent_position = None
 
         self.circles = dict()  # List to keep track of circles
-        self.start_time = 0
-        self.end_time = 300
+        self.start_time = None
+        self.end_time = None
+        self.time = None
 
     def init_board(self, start_time, end_time, agent_position):
         self._board = np.full((self.size[0], self.size[1], 3), self.bg_color, dtype=np.uint8)
         self.circles = dict()
         self.start_time = start_time
         self.end_time = end_time
-        self.time = 0
+        self.time = start_time
 
         self.agent_position = agent_position
         cv2.circle(self._board, self.agent_position, self.radius, self.agent_color, -1)
@@ -75,16 +77,55 @@ class Whiteboard(object):
     def get_state(self):
         return self.saturate_dark(
             self._board, 
-            int(255 * self.time / (self.end_time - self.start_time))
+            self.get_brightness()
         ).transpose(2, 0, 1)
 
     def get_frame_for_render(self):
         frame = self.saturate_dark(
             self._board,
-            int(255 * self.time / (self.end_time - self.start_time))
+            self.get_brightness()
+        ) # Agent's view
+        frame = np.hstack((
+            frame, 
+            np.full((84, 2, 3), self.bg_color, dtype=np.uint8),
+            self._board
+        )) # Plot with omniscient view (84, 170, 3)
+
+        # Scale-up
+        frame = cv2.resize(frame, (510, 192), interpolation=cv2.INTER_LINEAR)
+
+        # Put the title
+        frame = np.vstack((
+            np.full((20, 510, 3), self.bg_color, dtype=np.uint8),
+            frame
+        ))
+        frame[:, 252:258, :] = 0
+
+        cv2.putText(
+            frame,
+            "Agent's view",
+            (6, 12), cv2.FONT_ITALIC, 0.5, (0, 0, 0), 1
         )
-        cv2.resize(frame, (256, 256), interpolation=cv2.INTER_CUBIC)
+        cv2.putText(
+            frame,
+            "Omniscient view",
+            (264, 12), cv2.FONT_ITALIC, 0.5, (0, 0, 0), 1
+        )
+        cv2.imshow('test', frame)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
         return frame
+
+    def get_brightness(self):
+        if self.time <= (self.day_len / 3): # First daytime
+            return int(255 * (self.time - self.start_time) / (self.day_len / 3 - self.start_time))
+        elif self.time <= (self.day_len * 2 / 3): # Night
+            return 255
+        else: # Second daytime
+            return 255 - int(
+                255 * (self.time - (self.day_len * 2 / 3)) / 
+                    (self.end_time - (self.day_len * 2 / 3))
+            )
 
     @staticmethod
     def saturate_dark(img, darker):
@@ -105,7 +146,7 @@ class BallCrashing(gym.Env):
         num_good: int = 3,
         num_bad: int = 3,
         reward_range: Union[Tuple, List] = (-100, 100),
-        day_len: int = 500,
+        day_len: int = 300,
         render_mode: str = None
     ):
         super().__init__()
@@ -133,7 +174,7 @@ class BallCrashing(gym.Env):
             self.reward_range
         ) # {color: reward}
 
-        self.board = Whiteboard(day_len=day_len)
+        self.board = Whiteboard(day_len=day_len, radius=5)
         self.render_mode = render_mode
 
     def reset(self, seed=None, options=None):
@@ -178,8 +219,9 @@ class BallCrashing(gym.Env):
 
         # Reward
         reward = 0
+        threshold = self.board.radius // 2
         for ex_crd in list(self.balls.keys()):
-            if (abs(ex_crd[0] - self.crd[0]) <= 2) and (abs(ex_crd[1] - self.crd[1]) <= 2):
+            if (abs(ex_crd[0] - self.crd[0]) <= threshold) and (abs(ex_crd[1] - self.crd[1]) <= threshold):
                 reward += self.ball_types[self.balls.pop(ex_crd)]
                 self.board.remove_circle(ex_crd)
 
@@ -222,8 +264,9 @@ class BallCrashing(gym.Env):
         gen_agent: bool = False
     ) -> Tuple[int, int]:
         def validate_coordinate(crd, existing_crds):
+            threshold = self.board.radius * 2.5
             for ex_crd in existing_crds:
-                if (abs(ex_crd[0] - crd[0]) < 6) and (abs(ex_crd[1] - crd[1]) < 6):
+                if (abs(ex_crd[0] - crd[0]) < threshold) and (abs(ex_crd[1] - crd[1]) < threshold):
                     return False
             return True
         
