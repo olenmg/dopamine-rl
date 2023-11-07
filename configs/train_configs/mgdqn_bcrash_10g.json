@@ -1,5 +1,5 @@
 {
-    "run_name": "MGDQN-2G-BallCrashing-Default",
+    "run_name": "MGDQN-10G-BallCrashing-Default",
     "algo": "MGDQN",
     "env_id": "BallCrashing",
     "n_envs": 1,

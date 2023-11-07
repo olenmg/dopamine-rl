@@ -6,13 +6,13 @@
     "eps_cls": "LinearDecayES",
     "eps_kwargs": {
         "init_eps": 1.0,
-        "milestones": [5000, 10000],
-        "target_eps": [0.1, 0.01]
+        "milestones": [5000, 50000],
+        "target_eps": [0.1, 0.05]
     },
     "discount_rate": 0.99,
     "soft_update_rate": 1.0,
     "buffer_size": 100000,
-    "learning_starts": 1000,
-    "train_freq": 1,
-    "target_update_freq": 512
+    "learning_starts": 10000,
+    "train_freq": 4,
+    "target_update_freq": 1024
 }
