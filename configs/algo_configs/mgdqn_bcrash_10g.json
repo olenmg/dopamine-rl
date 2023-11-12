@@ -15,7 +15,7 @@
     "soft_vote": true,
     "soft_update_rate": 1.0,
     "buffer_size": 100000,
-    "learning_starts": 10000,
+    "learning_starts": 512,
     "train_freq": 4,
-    "target_update_freq": 1024
+    "target_update_freq": 512
 }
