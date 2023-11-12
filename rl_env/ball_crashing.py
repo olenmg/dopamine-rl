@@ -81,26 +81,26 @@ class Whiteboard(object):
             self.get_brightness()
         ).transpose(2, 0, 1)
 
-    def get_frame_for_render(self):
+    def get_frame_for_render(self, score):
         frame = self.saturate_dark(
             self._board,
             self.get_brightness()
-        ) # Agent's view
+        ) # Agent's view: (84, 84, 3)
         frame = np.hstack((
             frame, 
             np.full((84, 2, 3), self.bg_color, dtype=np.uint8),
             self._board
-        )) # Plot with omniscient view (84, 170, 3)
+        )) # Plot with omniscient view: (84, 84, 3) + (84, 84, 3) + (84, 2, 3) = (84, 170, 3)
 
-        # Scale-up
-        frame = cv2.resize(frame, (510, 192), interpolation=cv2.INTER_LINEAR)
+        # Scale-up (84, 170, 3) -> (252, 510, 3)
+        frame = cv2.resize(frame, (510, 252), interpolation=cv2.INTER_LINEAR)
 
-        # Put the title
+        # Put the title (252, 510, 3) -> (272,510, 3)
         frame = np.vstack((
             np.full((20, 510, 3), self.bg_color, dtype=np.uint8),
             frame
         ))
-        frame[:, 252:258, :] = 0
+        frame[:, 252:258, :] = 0 # Add the padding
 
         cv2.putText(
             frame,
@@ -111,6 +111,11 @@ class Whiteboard(object):
             frame,
             "Omniscient view",
             (264, 12), cv2.FONT_ITALIC, 0.5, (0, 0, 0), 1
+        )
+        cv2.putText(
+            frame,
+            str(score),
+            (450, 20), cv2.FONT_ITALIC, 0.75, (0, 0, 0), 1
         )
         return frame
 
@@ -184,6 +189,7 @@ class BallCrashing(gym.Env):
         self.start_time = randrange(20)
         self.end_time = randrange(self.day_len - 20, self.day_len)
         self.cur_time = self.start_time
+        self.episodic_reward = 0 # for logging 
 
         self.crd = self.generate_coordinate(gen_agent=True)
         self.balls = dict() # {coordinates: color}
@@ -232,18 +238,19 @@ class BallCrashing(gym.Env):
                 self.board.add_circle(new_ball[0], COLORS[new_ball[1]])
         self.board.move_agent(self.crd)
 
-        # Done
+        self.episodic_reward += reward
         done = (self.cur_time == self.end_time)
 
         # Info
         info = {
-            "cur_time": self.cur_time
+            "cur_time": self.cur_time,
+            "reward": reward
         }
 
         return self.board.get_state(), reward, done, False, info
 
     def render(self):
-        return self.board.get_frame_for_render()
+        return self.board.get_frame_for_render(score=self.episodic_reward)
 
     def make_new_ball(self, ball_type: str) -> Tuple[Tuple[int, int], str]:
         assert len(self.balls) <= self.num_good + self.num_bad, "Too many balls."
