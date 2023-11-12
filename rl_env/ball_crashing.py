@@ -30,8 +30,9 @@ COLORS = {
 }
 
 class Whiteboard(object):
-    def __init__(self, day_len, radius=5, size=(84, 84), bg_color=(255, 255, 255)):
+    def __init__(self, day_len, all_day=False, radius=5, size=(84, 84), bg_color=(255, 255, 255)):
         self.day_len = day_len
+        self.all_day = all_day
         self.radius = radius
         self.size = size
         self.bg_color = bg_color
@@ -113,16 +114,19 @@ class Whiteboard(object):
         )
         return frame
 
-    def get_brightness(self):
-        if self.time <= (self.day_len / 3): # First daytime
-            return int(255 * (self.time - self.start_time) / (self.day_len / 3 - self.start_time))
-        elif self.time <= (self.day_len * 2 / 3): # Night
-            return 255
-        else: # Second daytime
-            return 255 - int(
-                255 * (self.time - (self.day_len * 2 / 3)) / 
-                    (self.end_time - (self.day_len * 2 / 3))
-            )
+    def get_brightness(self) -> int:
+        if self.all_day:
+            return 0
+        else:
+            if self.time <= (self.day_len / 3): # First daytime
+                return int(255 * (self.time - self.start_time) / (self.day_len / 3 - self.start_time))
+            elif self.time <= (self.day_len * 2 / 3): # Night
+                return 255
+            else: # Second daytime
+                return 255 - int(
+                    255 * (self.time - (self.day_len * 2 / 3)) / 
+                        (self.end_time - (self.day_len * 2 / 3))
+                )
 
     @staticmethod
     def saturate_dark(img, darker):
@@ -144,6 +148,7 @@ class BallCrashing(gym.Env):
         num_bad: int = 3,
         reward_range: Union[Tuple, List] = (-100, 100),
         day_len: int = 300,
+        all_day: bool = True,
         render_mode: str = None
     ):
         super().__init__()
@@ -171,7 +176,7 @@ class BallCrashing(gym.Env):
             self.reward_range
         ) # {color: reward}
 
-        self.board = Whiteboard(day_len=day_len, radius=5)
+        self.board = Whiteboard(day_len=day_len, all_day=all_day, radius=5)
         self.render_mode = render_mode
 
     def reset(self, seed=None, options=None):
@@ -216,6 +221,7 @@ class BallCrashing(gym.Env):
 
         # Reward
         reward = 0
+        # reward = 0 if action == 0 else -1 # Moving penalty
         threshold = self.board.radius // 2
         for ex_crd in list(self.balls.keys()):
             if (abs(ex_crd[0] - self.crd[0]) <= threshold) and (abs(ex_crd[1] - self.crd[1]) <= threshold):
@@ -224,7 +230,6 @@ class BallCrashing(gym.Env):
 
                 new_ball = self.make_new_ball('good' if reward > 0 else 'bad')
                 self.board.add_circle(new_ball[0], COLORS[new_ball[1]])
-        reward -= 1  # time penalty
         self.board.move_agent(self.crd)
 
         # Done
