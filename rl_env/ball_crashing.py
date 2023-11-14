@@ -115,7 +115,7 @@ class Whiteboard(object):
         cv2.putText(
             frame,
             str(score),
-            (450, 20), cv2.FONT_ITALIC, 0.75, (0, 0, 0), 1
+            (435, 20), cv2.FONT_HERSHEY_DUPLEX, 0.75, (0, 0, 0), 1
         )
         return frame
 
