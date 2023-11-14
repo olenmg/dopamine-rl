@@ -293,7 +293,7 @@ class BallCrashing(gym.Env):
         reward_range: Tuple[int, int]
     ) -> List[Tuple[str, float]]:
         """ Determine the color and reward of the balls to be used. """
-        good_range = np.linspace(0, reward_range[-1], num_good + 1)[0:]
+        good_range = np.linspace(0, reward_range[-1], num_good + 1)[1:]
         bad_range = np.linspace(reward_range[0], 0, num_bad + 1)[:-1]
 
         candidates = dict()
