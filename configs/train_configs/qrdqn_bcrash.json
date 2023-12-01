@@ -3,7 +3,7 @@
     "algo": "QRDQN",
     "env_id": "BallCrashing",
     "n_envs": 1,
-    "state_len": 1,
+    "state_len": 4,
     "frame_skip": 1,
     "reward_clipping": false,
     "random_seed": 42,
@@ -14,7 +14,7 @@
         "lr": 5e-5
     },
     "batch_size": 128,
-    "train_step": 1000000,
+    "train_step": 10000000,
     "save_freq": 50000,
     "logging_freq": 10000,
     "device": "auto",

@@ -101,20 +101,14 @@ class CnnPolicy(PolicyNetwork):
         # Expected input tensor shape: (B, state_len, 84, 84)
         # Input (B, 210, 160, 3) will be processed by `ProcessFrame84` wrapper -> (B, 84, 84, state_len)
         self.conv = nn.Sequential(
-            # nn.Conv2d(state_len if not rgb_array else 3, 32, kernel_size=8, stride=4),
-            # nn.ReLU(),
-            # nn.Conv2d(32, 64, kernel_size=4, stride=2),
-            # nn.ReLU(),
-            # nn.Conv2d(64, 64, kernel_size=3, stride=1),
-            # nn.ReLU(),
-            nn.Conv2d(in_channels=state_len if not rgb_array else 3, out_channels=8, kernel_size=3, stride=2, padding=1),
+            nn.Conv2d(state_len if not rgb_array else 3, 32, kernel_size=8, stride=4),
             nn.ReLU(),
-            nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2),
             nn.ReLU(),
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=1),
-            nn.ReLU()
+            nn.Conv2d(64, 64, kernel_size=3, stride=1),
+            nn.ReLU(),
         )
-        self.fc = nn.Linear(4 * 4 * 32, 512)
+        self.fc = nn.Linear(7 * 7 * 64, 512)
 
         if n_out == -1:
             self.fc_q = nn.Linear(512, n_actions)

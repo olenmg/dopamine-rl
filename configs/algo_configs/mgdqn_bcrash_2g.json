@@ -1,7 +1,7 @@
 {
     "policy_kwargs": {
         "policy_type": "CnnPolicy",
-        "rgb_array": true
+        "rgb_array": false 
     },
     "eps_cls": "LinearDecayES",
     "eps_kwargs": {

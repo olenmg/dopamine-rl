@@ -1,4 +1,5 @@
 import random
+from copy import deepcopy
 from random import randrange
 from typing import Tuple, List, Union
 
@@ -15,11 +16,11 @@ class BallCrashing(gym.Env):
 
     def __init__(
         self,
-        num_good: int = 8,
+        num_good: int = 20,
         num_bad: int = 0,
-        reward_range: Union[Tuple, List] = (-5, 5),
-        grid_size: int = 8,
-        day_len: int = 300,
+        reward_range: Union[Tuple, List] = (-100, 100),
+        grid_size: int = 16,
+        day_len: int = 500,
         all_day: bool = True,
         render_mode: str = None
     ):
@@ -30,7 +31,7 @@ class BallCrashing(gym.Env):
         print("[Ball Crashing] Ready for playing!")
 
         self.grid_size = grid_size
-        self.action_space = spaces.Discrete(5)
+        self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(
             low=-5, high=5, shape=(grid_size * grid_size, ), dtype=np.float32
         ) # Ball: 0, Other: reward
@@ -48,6 +49,15 @@ class BallCrashing(gym.Env):
 
         self.render_mode = render_mode
 
+        ## Fix init. state
+        self.crd = (0, 0)
+        self.balls = dict() # {coordinates: reward}
+        for _ in range(self.num_good):
+            self.make_new_ball(ball_type='good')
+        for _ in range(self.num_bad):
+            self.make_new_ball(ball_type='bad')
+        self.init_balls = deepcopy(self.balls)
+
     def reset(self, seed=None, options=None):
         # Reset the state of the environment to an initial state        
         self.start_time = randrange(20)
@@ -55,14 +65,8 @@ class BallCrashing(gym.Env):
         self.cur_time = self.start_time
         self.episodic_reward = 0 # for logging 
 
-        # self.crd = self.generate_coordinate(gen_agent=True)
-        # self.balls = dict() # {coordinates: reward}
-        # for _ in range(self.num_good):
-        #     self.make_new_ball(ball_type='good')
-        # for _ in range(self.num_bad):
-        #     self.make_new_ball(ball_type='bad')
         self.crd = (0, 0)
-        self.balls = {(3, 3): 0.625, (2, 0): 3.125, (0, 2): 5.0, (7, 3): 4.375, (4, 5): 0.625, (0, 4): 0.625, (6, 6): 1.875, (0, 7): 2.5}
+        self.balls = deepcopy(self.init_balls)
 
         info = {
             "start_time": self.start_time,
@@ -77,20 +81,20 @@ class BallCrashing(gym.Env):
         self.cur_time += 1
 
         prev_crd = self.crd
-        if action == 0: # No-op
-            pass  
-        elif action == 1: # Up
+        # if action == 0: # No-op
+        #     pass  
+        if action == 0: # Up
             self.crd = (max(self.crd[0] - 1, 0), self.crd[1])
-        elif action == 2: # Down
+        elif action == 1: # Down
             self.crd = (min(self.crd[0] + 1, self.grid_size - 1), self.crd[1])
-        elif action == 3: # Left
+        elif action == 2: # Left
             self.crd = (self.crd[0], max(self.crd[1] - 1, 0))
-        elif action == 4: # Right
+        elif action == 3: # Right
             self.crd = (self.crd[0], min(self.crd[1] + 1, self.grid_size - 1))
 
         # Reward
         # reward = 0
-        reward = -1 if (self.crd == prev_crd) else -0.001 # Penalty
+        reward = -100 if (self.crd == prev_crd) else -0.001 # Penalty
         # reward = 0 if action == 0 else -0.01 # Moving penalty
         for ex_crd in list(self.balls.keys()):
             if (ex_crd[0] == self.crd[0]) and (ex_crd[1] == self.crd[1]):
@@ -98,7 +102,7 @@ class BallCrashing(gym.Env):
                 self.make_new_ball('good' if reward > 0 else 'bad')
 
         self.episodic_reward += reward
-        done = (self.cur_time == self.end_time)
+        done = (self.cur_time == self.end_time) or (self.crd == prev_crd)
 
         # Info
         info = {
@@ -137,9 +141,9 @@ class BallCrashing(gym.Env):
         return img
 
     def get_grid_state(self):
-        state = np.ones((self.grid_size, self.grid_size), dtype=np.float32) * -1
+        state = np.ones((self.grid_size, self.grid_size), dtype=np.float32) * 255
         for (y, x), val in self.balls.items():
-            state[y, x] = val
+            state[y, x] = 128
         state[self.crd[0], self.crd[1]] = 0
         return state
 
@@ -150,7 +154,7 @@ class BallCrashing(gym.Env):
         reward = random.choice(self.ball_types[ball_type])
         self.balls.update({coordinate: reward})
 
-        return (coordinate, reward)
+        return (coordinate, 10)
 
     def generate_coordinate(
         self,
@@ -194,6 +198,7 @@ if __name__ == "__main__":
         frames = []
 
         obs, _ = env.reset()
+        print(obs)
         for _ in range(n_step):
             # Render into buffer. 
             frames.append(env.render())
@@ -221,7 +226,7 @@ if __name__ == "__main__":
             patch.set_data(frames[i])
             
         ani = animation.FuncAnimation(plt.gcf(), animate, frames=len(frames), interval=5)
-        ani.save(fname, writer='pillow', fps=30)
+        ani.save(fname, writer='pillow', fps=2)
 
 
     env = BallCrashing()

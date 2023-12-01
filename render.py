@@ -42,7 +42,7 @@ def display_frames_as_gif(frames, fname="result.gif"):
         patch.set_data(frames[i])
         
     ani = animation.FuncAnimation(plt.gcf(), animate, frames=len(frames), interval=5)
-    ani.save(fname, writer='pillow', fps=30)
+    ani.save(fname, writer='pillow', fps=5)
 
 def render(args):
     if args.log_path:
@@ -78,7 +78,7 @@ def render(args):
     frames = get_render_frames(
         model=model,
         env=env,
-        n_step=2000
+        n_step=5000
     )
 
     display_frames_as_gif(
